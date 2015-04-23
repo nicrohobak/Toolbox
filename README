@@ -1,0 +1,18 @@
+------------------------------------------------------------------------------
+|                             Simple C++ Toolbox                             |
+------------------------------------------------------------------------------
+
+- "Installation" is simple -- Copy this directory (or create a symlink to it)
+  in your /usr/local/include directory.
+
+- Each tool in this toolbox is designed to be a stand-alone, include-only
+  library.
+
+- All documentation is included directly within each source file.
+
+- Example code may be found within some "example" directories within or within
+  the source documentation.
+
+------------------------------------------------------------------------------
+
+
