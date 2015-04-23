@@ -25,14 +25,9 @@ int main( int argc, char *argv[] )
 		// Use the Toolbox::Plugin::Manager to create specific implementations of our SimpleTask interface
 		SimpleTask::Ptr Simple1 = PluginManager.Create< SimpleTask >( "SimpleImple1" );
 		SimpleTask::Ptr Simple2 = PluginManager.Create< SimpleTask >( "SimpleImple2" );
-
-		if ( !Simple1 )
-			std::cerr << "Failed to create SimpleImple1" << std::endl;
-
-		if ( !Simple2 )
-			std::cerr << "Failed to create SimpleImple2" << std::endl;
-
+		
 		int a = 5, b = 7;
+
 		std::cout << a << " " << Simple1->Operation() << " = " << Simple1->Task( a ) << std::endl;
 		std::cout << b << " " << Simple1->Operation() << " = " << Simple1->Task( b ) << std::endl;
 		std::cout << a << " " << Simple2->Operation() << " = " << Simple2->Task( a ) << std::endl;
