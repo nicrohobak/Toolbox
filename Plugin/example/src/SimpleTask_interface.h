@@ -11,7 +11,7 @@
 DEFINE_TOOLBOX_PLUGIN_INTERFACE( SimpleTask, 0.1 )
 
 	virtual const std::string &Operation() = 0;
-    virtual int Task( int input ) = 0;
+	virtual int Task( int input ) = 0;
 
 END_TOOLBOX_PLUGIN_DEF
 

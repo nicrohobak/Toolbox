@@ -98,7 +98,7 @@ namespace Toolbox
 		template <typename tType>
 		tType GetSymbol( const std::string &symbol )
 		{
-			tType Symbol;
+			tType Symbol = NULL;
 			Symbol = (tType) dlsym( _Handle, symbol.c_str() );
 
 			if ( !Symbol )

@@ -84,7 +84,6 @@ namespace Toolbox
 		};
 
 
-	// TODO: Make this accept any number of arguments to pass to the constructor
 	#define DEFINE_TOOLBOX_PLUGIN_FACTORY( tInterface, tImplementation )	\
 		const char *_Name						= #tImplementation;			\
 		const char *_APIVersion					= tInterface::APIVersion;	\
@@ -157,26 +156,15 @@ namespace Toolbox
 			return _Name;
 		}
 
-		const std::string &Version() const
-		{
-			return _Version;
-		}
-
-		const std::string &Provides() const
-		{
-			return _Provides;
-		}
-
 		const std::string &APIVersion() const
 		{
 			return _APIVersion;
 		}
 
-		// TODO: Make this allow any number of constructor arguments too
-		template <typename tInterface>
-		typename tInterface::Ptr Create( const std::string &type )
+		template <typename tInterface, typename ... tArgs>
+		typename tInterface::Ptr Create( const std::string &type, tArgs ... arguments  )
 		{
-			typedef typename tInterface::Ptr (*tCreateFunc)( void );
+			typedef typename tInterface::Ptr (*tCreateFunc)( tArgs ... arguments );
 
 			typename tInterface::Ptr Instance;
 			tCreateFunc CreateFunc = NULL;
@@ -184,7 +172,7 @@ namespace Toolbox
 			try
 			{
 				CreateFunc = _Library.GetSymbol< tCreateFunc >( std::string("Create") + type );
-				Instance = (*CreateFunc)();
+				Instance = (*CreateFunc)( &arguments... );
 			}
 			catch ( std::exception &ex )
 			{
@@ -198,62 +186,62 @@ namespace Toolbox
 		SharedLibrary	_Library;
 
 		std::string		_Name;
-		std::string		_Version;
-		std::string		_Provides;
 		std::string		_APIVersion;
 
-	// HACK: ----- END OF Plugin CLASS --- This sub-block is a namespace hack for more legible syntax when in-use
+	};
+
+	
+	/*
+	 * Generic plugin manager
+	 */
+	class PluginManager
+	{
 	public:
-		/*
-		 * Generic plugin manager
-		 */
-		class Manager
+		TOOLBOX_MEMORY_POINTERS( PluginManager );
+
+	public:
+		PluginManager()
 		{
-		public:
-			TOOLBOX_MEMORY_POINTERS( Manager );
+		}
 
-		public:
-			Manager()
+		virtual ~PluginManager()
+		{
+		}
+
+		const Plugin::List Plugins() const
+		{
+			return _Plugins;
+		}
+
+		void Load( const std::string &fileName )
+		{
+			_Plugins.push_back( std::make_shared< Plugin >(fileName) );
+		}
+
+		template <typename tInterface, typename ... tArgs>
+		typename tInterface::Ptr Create( const std::string &type, tArgs ... arguments )
+		{
+			typename tInterface::Ptr Instance;
+
+			for ( auto p = _Plugins.begin(), p_end = _Plugins.end(); p != p_end; ++p )
 			{
-			}
-
-			virtual ~Manager()
-			{
-			}
-
-			const Plugin::List Plugins() const
-			{
-				return _Plugins;
-			}
-
-			void Load( const std::string &fileName )
-			{
-				_Plugins.push_back( std::make_shared< Plugin >(fileName) );
-			}
-
-			// TODO: Make this allow any number of constructor arguments too
-			template <typename tInterface>
-			typename tInterface::Ptr Create( const std::string &type )
-			{
-				typename tInterface::Ptr Instance;
-
-				for ( auto p = _Plugins.begin(), p_end = _Plugins.end(); p != p_end; ++p )
+				if ( !type.compare((*p)->Name()) )
 				{
-					if ( !type.compare((*p)->Name()) )
-					{
-						Instance = (*p)->Create< tInterface >( tInterface::InterfaceName );
-						break;
-					}
+					Instance = (*p)->Create< tInterface >( tInterface::InterfaceName, &arguments ... );
+					break;
 				}
-
-				return Instance;
 			}
 
+			if ( !Instance )
+				throw std::runtime_error( std::string("Toolbox::Plugin::Manager::Create(): Failed to create new ") + tInterface::InterfaceName + ": Create" + type + " not found." );
 
-		protected:
-			Plugin::List	_Plugins;
-		};
-	}; // HACK: ----- ACTUAL END OF Plugin CLASS ----
+			return Instance;
+		}
+
+
+	protected:
+		Plugin::List	_Plugins;
+	};
 }
 
 

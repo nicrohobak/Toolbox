@@ -15,7 +15,7 @@ int main( int argc, char *argv[] )
 
 	try
 	{
-		Toolbox::Plugin::Manager PluginManager;
+		Toolbox::PluginManager PluginManager;
 
 		const std::string PluginDir( "./plugin/" );
 		const std::string PluginExt( ".so" );
