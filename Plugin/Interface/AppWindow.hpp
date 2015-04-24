@@ -10,7 +10,7 @@
 /*****************************************************************************
     // Example use:
 	Toolbox::PluginManager PluginManager;
-	PluginManager.Load( "/path/to/Toolbox/Plugin/Common/AppWindow/sdl.so" );
+	PluginManager.Load( "/usr/local/include/Toolbox/Plugin/Common/AppWindow/SDL.so" );
 	AppWindow::Ptr AppWin = PluginManager.Create< AppWindow >( "SDL" );
 	AppWin->Create( "SDL Window" );
 		// Do things with the window
@@ -28,8 +28,26 @@ namespace Toolbox
 		constexpr static int DEFAULT_WIDTH = 800;
 		constexpr static int DEFAULT_HEIGHT = 600;
 
-		virtual void Create( const std::string &title = std::string("App"), int width = DEFAULT_WIDTH, int height = DEFAULT_HEIGHT, long int flags = 0 ) = 0;
+		virtual void Create( const std::string &title = std::string("Toolbox Application Window"),
+							 int width = DEFAULT_WIDTH,
+							 int height = DEFAULT_HEIGHT,
+							 long int flags = 0,
+							 int glMajorVer = 0,
+							 int glMinorVer = 0 ) = 0;
+
 		virtual void Destroy() = 0;
+
+		virtual void GetPos( int *x, int *y ) = 0;					// Get window position
+		virtual void SetPos( int x, int y ) = 0;					// Set window position
+		virtual void Center( bool x = true, bool y = true ) = 0;	// Center window on screen
+
+		virtual void Minimize() = 0;								// Minimize the window
+		virtual void Maximize() = 0;								// Maximize the window
+		virtual void Restore() = 0;									// Restore window to windowed mode
+
+		virtual void Raise() = 0;									// Raise the window above all others
+
+		virtual void Swap()			{ }								// Swap screen buffers (Optional)
 
 	END_TOOLBOX_PLUGIN_DEF
 }
