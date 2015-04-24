@@ -1,6 +1,3 @@
-#ifndef PLUGINS_SIMPLE1_H
-#define PLUGINS_SIMPLE1_H
-
 /*
  * SimpleTask plugin implementation called SimpleImple1
  */
@@ -34,9 +31,6 @@ extern "C"
 	// void onLoad();
 	// void onUnload();
 }
-
-
-#endif // PLUGINS_SIMPLE1_H
 
 
 // vim: tabstop=4 shiftwidth=4
