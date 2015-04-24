@@ -85,6 +85,7 @@ namespace Toolbox
 
 	#define DEFINE_TOOLBOX_PLUGIN_FACTORY( tInterface, tImplementation )	\
 		const char *_Name						= #tImplementation;			\
+		const char *_Provides					= #tInterface;				\
 		const char *_APIVersion					= tInterface::APIVersion;	\
 																			\
 		tInterface::Ptr Create##tInterface()								\
@@ -113,6 +114,7 @@ namespace Toolbox
 			try
 			{
 				_Name = _Library.GetValue< const char * >( "_Name" );
+				_Provides = _Library.GetValue< const char * >( "_Provides" );
 				_APIVersion = _Library.GetValue< const char * >( "_APIVersion" );
 			}
 			catch ( std::exception &ex )
@@ -155,6 +157,11 @@ namespace Toolbox
 			return _Name;
 		}
 
+		const std::string &Provides() const
+		{
+			return _Provides;
+		}
+
 		const std::string &APIVersion() const
 		{
 			return _APIVersion;
@@ -185,6 +192,7 @@ namespace Toolbox
 		SharedLibrary	_Library;
 
 		std::string		_Name;
+		std::string		_Provides;
 		std::string		_APIVersion;
 
 	};
@@ -224,7 +232,8 @@ namespace Toolbox
 
 			for ( auto p = _Plugins.begin(), p_end = _Plugins.end(); p != p_end; ++p )
 			{
-				if ( !type.compare((*p)->Name()) )
+				// If it's the same interface, and the specified plugin...
+				if ( !(*p)->Provides().compare(tInterface::InterfaceName) && !type.compare((*p)->Name()) )
 				{
 					Instance = (*p)->Create< tInterface >( tInterface::InterfaceName, &arguments ... );
 					break;
