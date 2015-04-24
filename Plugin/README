@@ -1,0 +1,28 @@
+------------------------------------------------------------------------------
+|                         Simple C++ Toolbox Plugins                         |
+------------------------------------------------------------------------------
+
+- Due to the nature of plugins, there's more here than for most other tools in
+  our toolbox.  Here's a directory breakdown:
+
+  - Common
+    - All pre-compiled plugins in an 'Interface/Plugin.so' structure
+  - Implementation
+    - All common plugin source files in an 'Interface/Plugin.cpp' structure
+  - Interface 
+    - All common plugin interfaces .hpp files (the includes for projects)
+  - example
+    - A simple plugin example showing proper usage of the Plugin tool
+
+- In the Implementation directory is a plugin build script for the common
+  plugins, conveniently called: build_plugins.sh  This script builds each of
+  the plugins and places the result in the Common directory.
+
+- This one tool nearly "violates" the notion of this library being
+  header-only, since it has pre-compiled parts...  But due to their nature as
+  plugins, these parts are purely optional.  Having some of the more commonly
+  used, generic plugins in a central location far outweighs this "issue".
+
+------------------------------------------------------------------------------
+
+
