@@ -67,8 +67,7 @@ namespace Toolbox
 		public:																\
 			constexpr static const char *InterfaceName = #tInterface;		\
 			constexpr static const char *APIVersion = #tVersion;			\
-			typedef std::shared_ptr< tInterface >	Ptr;					\
-			typedef std::weak_ptr< tInterface >		wPtr;
+			TOOLBOX_MEMORY_POINTERS( tInterface )
 
 
 	// MUST be closed with END_TOOLBOX_PLUGIN_DEF!
