@@ -21,15 +21,18 @@
 #include <Toolbox/Plugin.hpp>
 
 
-DEFINE_TOOLBOX_PLUGIN_INTERFACE( AppWindow, 0.1 )
+namespace Toolbox
+{
+	DEFINE_TOOLBOX_PLUGIN_INTERFACE( AppWindow, 0.1 )
 
-	constexpr static int DEFAULT_WIDTH = 800;
-	constexpr static int DEFAULT_HEIGHT = 600;
+		constexpr static int DEFAULT_WIDTH = 800;
+		constexpr static int DEFAULT_HEIGHT = 600;
 
-	virtual void Create( const std::string &title = std::string("App"), int width = DEFAULT_WIDTH, int height = DEFAULT_HEIGHT, long int flags = 0 ) = 0;
-	virtual void Destroy() = 0;
+		virtual void Create( const std::string &title = std::string("App"), int width = DEFAULT_WIDTH, int height = DEFAULT_HEIGHT, long int flags = 0 ) = 0;
+		virtual void Destroy() = 0;
 
-END_TOOLBOX_PLUGIN_DEF
+	END_TOOLBOX_PLUGIN_DEF
+}
 
 
 #endif // TOOLBOX_PLUGIN_INTERFACE_APPWINDOW_HPP

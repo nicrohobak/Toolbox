@@ -1,0 +1,13 @@
+# Exclude some common binary file types
+*.swp
+*.so
+
+# Exclude all built common plugins
+Plugin/Common/*
+
+# Exclude all files built by the Plugin example
+Plugin/example/obj
+Plugin/example/plugin
+Plugin/example/example
+
+

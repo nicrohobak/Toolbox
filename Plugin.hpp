@@ -67,11 +67,36 @@ namespace Toolbox
 		public:																\
 			constexpr static const char *InterfaceName = #tInterface;		\
 			constexpr static const char *APIVersion = #tVersion;			\
+			TOOLBOX_MEMORY_POINTERS( tInterface )							\
+																			\
+			virtual ~tInterface() { }
+
+
+	// Same as above, but with no destructor automatically defined, the user MUST provide one
+	// MUST be closed with END_TOOLBOX_PLUGIN_DEF!
+	#define DEFINE_TOOLBOX_PLUGIN_INTERFACE_D( tInterface, tVersion )		\
+		class tInterface													\
+		{																	\
+		public:																\
+			constexpr static const char *InterfaceName = #tInterface;		\
+			constexpr static const char *APIVersion = #tVersion;			\
 			TOOLBOX_MEMORY_POINTERS( tInterface )
+
 
 
 	// MUST be closed with END_TOOLBOX_PLUGIN_DEF!
 	#define DEFINE_TOOLBOX_PLUGIN( tInterface, tImplementation )			\
+		class tImplementation : public tInterface							\
+		{																	\
+		public:																\
+			TOOLBOX_MEMORY_POINTERS( tImplementation )						\
+																			\
+			virtual ~tImplementation() { }
+
+
+	// Same as above, but with no destructor automatically defined, the user MUST provide one
+	// MUST be closed with END_TOOLBOX_PLUGIN_DEF!
+	#define DEFINE_TOOLBOX_PLUGIN_D( tInterface, tImplementation )			\
 		class tImplementation : public tInterface							\
 		{																	\
 		public:																\
