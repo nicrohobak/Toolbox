@@ -8,8 +8,22 @@
  */
 
 /*****************************************************************************
- ****************************************************************************/
+    // Example use:
+	Toolbox::PluginManager PluginManager;
+	PluginManager.Load( "/usr/local/include/Toolbox/Plugin/Common/AppWindow/SDL2.so" );
+	PluginManager.Load( "/usr/local/include/Toolbox/Plugin/Common/Renderer/OpenGL.so" );
 
+	Toolbox::AppWindow::Ptr AppWin = PluginManager.Create< Toolbox::AppWindow >( "SDL2" );
+	Toolbox::Renderer::Ptr Renderer = PluginManager.Create< Toolbox::Renderer >( "OpenGL" );
+
+	// Create an SDL window with an OpenGL 3.3 rendering context
+	AppWin->Create( "SDL2 Window", 800, 600, SDL_WINDOW_OPENGL, 3, 3 );
+		Renderer->BeginFrame();
+			// OpenGL rendering code
+		Renderer->EndFrame();
+		AppWin->Swap();					// Swap VRAM
+ 	AppWin->Destroy();
+ ****************************************************************************/
 
 #include <Toolbox/Plugin.hpp>
 

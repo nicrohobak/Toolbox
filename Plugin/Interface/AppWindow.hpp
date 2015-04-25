@@ -10,9 +10,9 @@
 /*****************************************************************************
     // Example use:
 	Toolbox::PluginManager PluginManager;
-	PluginManager.Load( "/usr/local/include/Toolbox/Plugin/Common/AppWindow/SDL.so" );
-	AppWindow::Ptr AppWin = PluginManager.Create< AppWindow >( "SDL" );
-	AppWin->Create( "SDL Window" );
+	PluginManager.Load( "/usr/local/include/Toolbox/Plugin/Common/AppWindow/SDL2.so" );
+	AppWindow::Ptr AppWin = PluginManager.Create< AppWindow >( "SDL2" );
+	AppWin->Create( "SDL2 Window" );
 		// Do things with the window
  	AppWin->Destroy();
  ****************************************************************************/

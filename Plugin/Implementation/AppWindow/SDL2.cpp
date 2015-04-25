@@ -1,5 +1,5 @@
 /*
- * SDL-based App Window Plugin
+ * SDL2-based App Window Plugin
  *
  * NOTE: This plugin requires -lSDL2
  */
@@ -13,15 +13,15 @@
 
 namespace Toolbox
 {
-	DEFINE_TOOLBOX_PLUGIN_D( AppWindow, SDL )
+	DEFINE_TOOLBOX_PLUGIN_D( AppWindow, SDL2 )
 
-		SDL():
+		SDL2():
 			_Window( NULL ),
 			_OpenGLContext( NULL )
 		{
 		}
 
-		virtual ~SDL()
+		virtual ~SDL2()
 		{
 			this->Destroy();
 		}
@@ -29,12 +29,12 @@ namespace Toolbox
 		virtual void Create( const std::string &title, int width, int height, long int flags, int glMajorVer, int glMinorVer )
 		{
 			if ( SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) )
-				throw std::runtime_error( std::string("AppWindow(SDL): Failed to initialize SDL: ") + SDL_GetError() );
+				throw std::runtime_error( std::string("AppWindow(SDL2): Failed to initialize SDL: ") + SDL_GetError() );
 
 			_Window = SDL_CreateWindow( title.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, flags );
 
 			if ( !_Window )
-				throw std::runtime_error( std::string("AppWindow(SDL): Failed to create the window: ") + SDL_GetError() );
+				throw std::runtime_error( std::string("AppWindow(SDL2): Failed to create the window: ") + SDL_GetError() );
 
 			if ( !(flags & 1 << SDL_WINDOW_OPENGL) )
 			{
@@ -44,7 +44,7 @@ namespace Toolbox
 				_OpenGLContext = SDL_GL_CreateContext( _Window );
 
 				if ( !_OpenGLContext )
-					throw std::runtime_error( std::string("AppWindow(SDL): Failed to create the OpenGL context: ") + SDL_GetError() );
+					throw std::runtime_error( std::string("AppWindow(SDL2): Failed to create the OpenGL context: ") + SDL_GetError() );
 			}
 		}
 
@@ -118,7 +118,7 @@ namespace Toolbox
 
 	extern "C"
 	{
-		DEFINE_TOOLBOX_PLUGIN_FACTORY( AppWindow, SDL )
+		DEFINE_TOOLBOX_PLUGIN_FACTORY( AppWindow, SDL2 )
 
 		// Optional plugin event functions
 		// void onLoad();

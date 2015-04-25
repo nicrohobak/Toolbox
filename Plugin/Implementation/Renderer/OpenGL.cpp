@@ -29,10 +29,10 @@ int main( int argc, char *argv[] )
 	try
 	{
 		Toolbox::PluginManager PluginManager;
-		PluginManager.Load( "/usr/local/include/Toolbox/Plugin/Common/AppWindow/SDL.so" );
+		PluginManager.Load( "/usr/local/include/Toolbox/Plugin/Common/AppWindow/SDL2.so" );
 		PluginManager.Load( "/usr/local/include/Toolbox/Plugin/Common/Renderer/OpenGL.so" );
 
-		Toolbox::AppWindow::Ptr AppWin = PluginManager.Create< Toolbox::AppWindow >( "SDL" );
+		Toolbox::AppWindow::Ptr AppWin = PluginManager.Create< Toolbox::AppWindow >( "SDL2" );
 		Toolbox::Renderer::Ptr Renderer = PluginManager.Create< Toolbox::Renderer >( "OpenGL" );
 
 		// Create an SDL application window with an OpenGL 3.3 rendering context
