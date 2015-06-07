@@ -1,6 +1,11 @@
 # Exclude some common binary file types
 *.swp
 *.so
+*.o
+
+# Exclude all files built by the Genetics example
+Genetics/example/obj
+Genetics/example/example
 
 # Exclude all built common plugins
 Plugin/Common/*
