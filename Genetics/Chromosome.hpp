@@ -13,6 +13,9 @@
 #include <sstream>
 #include <string>
 
+#include <Toolbox/Memory.hpp>
+
+
 namespace Toolbox
 {
 	namespace Genetics
@@ -20,7 +23,7 @@ namespace Toolbox
 		class tAllele : public std::enable_shared_from_this< tAllele >
 		{
 		public:
-			typedef std::shared_ptr< tAllele >	Ptr;
+			TOOLBOX_MEMORY_POINTERS( tAllele )
 
 		public:
 			tAllele()
@@ -44,7 +47,7 @@ namespace Toolbox
 		class Allele : public tAllele
 		{
 		public:
-			typedef std::shared_ptr< Allele<tAlleleType> >	Ptr;
+			TOOLBOX_MEMORY_POINTERS( Allele<tAlleleType> )
 
 		public:
 			Allele()
@@ -89,7 +92,8 @@ namespace Toolbox
 		class Chromosome
 		{
 		public:
-			typedef std::shared_ptr< Chromosome >	Ptr;
+			TOOLBOX_MEMORY_POINTERS( Chromosome )
+
 			typedef unsigned int					tDominance;
 			typedef char							tGender;
 			typedef unsigned int					tMutationRate;

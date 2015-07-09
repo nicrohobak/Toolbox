@@ -84,6 +84,8 @@
 
 #include <cmath>
 
+#include <Toolbox/Memory.hpp>
+
 
 namespace Toolbox
 {
@@ -136,8 +138,7 @@ namespace Toolbox
 			typedef _tNeurotransmitter				tNeurotransmitter;
 			typedef _Neuron< tNeurotransmitter >	tNeuron;
 
-			typedef std::shared_ptr< tNeuron >		Ptr;
-			typedef std::weak_ptr< tNeuron >		wPtr;
+			TOOLBOX_MEMORY_POINTERS( tNeuron )
 
 			typedef std::map< wPtr, tNeurotransmitter, std::owner_less<wPtr> >	tDendrites;	// Neuron inputs & weights
 			typedef std::list< wPtr >			tAxons;		// Neuron outputs
@@ -358,8 +359,7 @@ namespace Toolbox
 			typedef tNeuron< tNucleus >						ttNeuron;
 			typedef typename tNucleus::tNeurotransmitter	tNeurotransmitter;
 
-			typedef std::shared_ptr< ttNeuron >				Ptr;
-			typedef std::weak_ptr< ttNeuron >				wPtr;
+			TOOLBOX_MEMORY_POINTERS( ttNeuron )
 
 			typedef _Neuron< tNeurotransmitter >			Parent;
 
@@ -411,8 +411,7 @@ namespace Toolbox
 			typedef typename tNucleus::tNeurotransmitter	tNeurotransmitter;
 			typedef tLabeledNeuron< tNucleus >				ttLabeledNeuron;
 
-			typedef std::shared_ptr< tLabeledNeuron >		Ptr;
-			typedef std::weak_ptr< tLabeledNeuron >			wPtr;
+			TOOLBOX_MEMORY_POINTERS( tLabeledNeuron )
 
 		public:
 			tLabeledNeuron():

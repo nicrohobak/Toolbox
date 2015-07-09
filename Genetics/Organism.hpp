@@ -23,7 +23,7 @@ namespace Toolbox
 		class Gamete : public Genome
 		{
 		public:
-			typedef std::shared_ptr< Gamete >	Ptr;
+			TOOLBOX_MEMORY_POINTERS( Gamete )
 
 		public:
 			Gamete()
@@ -44,7 +44,7 @@ namespace Toolbox
 		class Embryo : public Gamete
 		{
 		public:
-			typedef std::shared_ptr< Embryo >	Ptr;
+			TOOLBOX_MEMORY_POINTERS( Embryo )
 
 		public:
 			Embryo():
@@ -101,7 +101,8 @@ namespace Toolbox
 		class Organism
 		{
 		public:
-			typedef std::shared_ptr< Organism >	Ptr;
+			TOOLBOX_MEMORY_POINTERS( Organism )
+
 			typedef Chromosome::tMutationRate	tMutationRate;
 			typedef Genome::tChromosomeList		tChromosomeList;
 

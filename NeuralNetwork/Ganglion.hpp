@@ -62,8 +62,7 @@ namespace Toolbox
 		class tGanglion : public std::enable_shared_from_this< tGanglion<_tNeuron> >
 		{
 		public:
-			typedef std::shared_ptr< tGanglion<_tNeuron> >			Ptr;
-			typedef std::weak_ptr< tGanglion<_tNeuron> >			wPtr;
+			TOOLBOX_MEMORY_POINTERS( tGanglion<_tNeuron> )
 
 			typedef typename _tNeuron::tNeurotransmitter			tNeurotransmitter;
 			typedef typename _tNeuron::tNucleus						tNucleus;
