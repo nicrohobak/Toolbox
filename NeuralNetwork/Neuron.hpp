@@ -1,5 +1,5 @@
-#ifndef TOOLBOX_NEURALNETWORK_NEURON
-#define TOOLBOX_NEURALNETWORK_NEURON
+#ifndef TOOLBOX_NEURALNETWORK_NEURON_HPP
+#define TOOLBOX_NEURALNETWORK_NEURON_HPP
 
 /*
  * Toolbox/NeuralNetwork/Neuron.hpp
@@ -574,7 +574,7 @@ namespace Toolbox
 }
 
 
-#endif // TOOLBOX_NEURALNETWORK_NEURON
+#endif // TOOLBOX_NEURALNETWORK_NEURON_HPP
 
 
 // vim: tabstop=4 shiftwidth=4

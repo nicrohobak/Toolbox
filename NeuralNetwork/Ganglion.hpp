@@ -1,5 +1,5 @@
-#ifndef TOOLBOX_NEURALNETWORK_GANGLION
-#define TOOLBOX_NEURALNETWORK_GANGLION
+#ifndef TOOLBOX_NEURALNETWORK_GANGLION_HPP
+#define TOOLBOX_NEURALNETWORK_GANGLION_HPP
 
 /*
  * Toolbox/NeuralNetwork/Ganglion.hpp
@@ -297,7 +297,7 @@ namespace Toolbox
 }
 
 
-#endif // TOOLBOX_NEURALNETWORK_GANGLION
+#endif // TOOLBOX_NEURALNETWORK_GANGLION_HPP
 
 
 // vim: tabstop=4 shiftwidth=4

@@ -1,5 +1,5 @@
-#ifndef TOOLBOX_NEURALNETWORK_TRAINER
-#define TOOLBOX_NEURALNETWORK_TRAINER
+#ifndef TOOLBOX_NEURALNETWORK_TRAINER_HPP
+#define TOOLBOX_NEURALNETWORK_TRAINER_HPP
 
 /*
  * Toolbox/NeuralNetwork/Trainer.hpp
@@ -521,7 +521,7 @@ namespace Toolbox
 }
 
 
-#endif // TOOLBOX_NEURALNETWORK_TRAINER
+#endif // TOOLBOX_NEURALNETWORK_TRAINER_HPP
 
 
 // vim: tabstop=4 shiftwidth=4
