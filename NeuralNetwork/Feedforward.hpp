@@ -59,7 +59,7 @@ namespace Toolbox
 }
 
 
-#endif // TOOLBOX_NEURALNETWORK_NEURALNETWORK
+#endif // TOOLBOX_NEURALNETWORK_FEEDFORWARD
 
 
 // vim: tabstop=4 shiftwidth=4

@@ -49,9 +49,9 @@
  *
  *****************************************************************************
 #if USE_DEFAULT_NEURON
-    typedef Toolbox::NeuralNetwork::Neuron				Neuron;	// a.k.a. tNeuron< tNucleus<double> >
+    typedef Toolbox::NeuralNetwork::Neuron	Neuron;	// a.k.a. tNeuron< tNucleus<double> >
 #else
-	typedef int 										tNetworkDataType;
+	typedef int 							tNetworkDataType;
 
 	// Defines custom neuron functions and the core network data unit (int, in this case)
 	class CustomNucleus : public Toolbox::NeuralNetwork::tNucleus< tNetworkDataType >
@@ -69,7 +69,7 @@
 #endif // USE_DEFAULT_NEURON
 
 	Neuron::Ptr MyNeuron = std::make_shared< Neuron >();
-	MyNeuron->AddAxon( MyNeuron );						// Creates a recurrent connection to itself
+	MyNeuron->AddAxon( MyNeuron );						// Creates a loopback connection to itself
 
  ****************************************************************************/
 /****************************************************************************/
@@ -80,6 +80,7 @@
 #include <map>
 #include <memory>
 #include <random>
+#include <sstream>
 #include <stdexcept>
 
 #include <cmath>
@@ -91,37 +92,110 @@ namespace Toolbox
 {
 	namespace NeuralNetwork
 	{
-		// Forward declarations and typedefs
-		typedef double tNeurotransmitter_Default;
+		// Forward declarations
 		template <typename tNucleus> class _Neuron;
+
+		// Defaults
+		namespace Default
+		{
+			typedef double		tNeurotransmitter;
+		}
+
+
+		//
+		// Default Activation Functions
+		//
+		namespace Activation
+		{
+			template <typename tType>
+			tType Linear( tType value )
+			{
+				return value;
+			}
+
+			template <typename tType>
+			tType Sigmoid( tType value )
+			{
+				return tType(1) / (tType(1) + exp(-value));
+			}
+
+			template <typename tType>
+			tType FastSigmoid( tType value )
+			{
+				return value / (tType(1) + std::abs(value));
+			}
+
+			template <typename tType>
+			tType TanH( tType value )
+			{
+				return tanh( value );
+			}
+		}
+
+
+		//
+		// Default Derivation Functions (Activation counterparts, typically used during network training via backpropagation)
+		//
+		namespace Derivation
+		{
+			template <typename tType>
+			tType Linear( tType value )
+			{
+				return value;
+			}
+
+			template <typename tType>
+			tType Sigmoid( tType value )
+			{
+				return value * (tType(1) - value);
+			}
+
+			template <typename tType>
+			tType FastSigmoid( tType value )
+			{
+				return Sigmoid( value );
+			}
+
+			template <typename tType>
+			tType TanH( tType value )
+			{
+				// Thanks to Mike Seymour on StackOverflow for this snippet
+				//  - http://stackoverflow.com/users/204847/mike-seymour
+				tType sh = tType(1) / std::cosh( value );		// sech(x) = 1/cosh(x)
+				return sh * sh;									// sech^2(x)
+			}
+		}
 
 
 		// Our interface to customize our neurons.  Passed as a template parameter to our Neuron.
 		// tNeurotransmitter is built with the assumption to be of type 'double', but is templated for expansion possibilities -- this is true for all related classes with this template parameter
-		template <typename _tNeurotransmitter = tNeurotransmitter_Default>
+		template <typename _tNeurotransmitter = Default::tNeurotransmitter>
 		class tNucleus
 		{
 		public:
 			typedef _tNeurotransmitter				tNeurotransmitter;
 			typedef _Neuron< tNeurotransmitter >	tNeuron;			// Base class!
-			typedef std::shared_ptr< tNeuron >		tNeuron_Ptr;		// Ptr to base Neuron class!
+			typedef std::shared_ptr< tNeuron >		tNeuron_Ptr;
 
 		public:
 			virtual ~tNucleus()
 			{
 			}
 
-			// The input summation function
-			virtual tNeurotransmitter Summation( tNeuron_Ptr self );	// NOTE: Default implementation exists below Neuron class definition
+			// NOTE: Default implementation exists below Neuron class definition
+			virtual tNeurotransmitter Accumulator( tNeuron_Ptr self );
 
 			virtual tNeurotransmitter Activation( tNeurotransmitter value )
 			{
-				return tanh( value );
+				return Activation::Sigmoid( value );
+				//return Activation::TanH( value );
 			}
 
 			// The inverse of our activation function (used during backprop learning)
 			virtual tNeurotransmitter Derivation( tNeurotransmitter value )
 			{
+				return Derivation::Sigmoid( value );
+				//return Derivation::TanH( value );
 			}
 		};
 
@@ -130,29 +204,63 @@ namespace Toolbox
 		typedef tNucleus<>	Nucleus;
 
 
-		// Neurons maintain both dendrites and axons to assist algorithms (like backprop) with neighbor neuron checking -- tNeurotransmitter type MUST match Nucleus tNeurotransmitter
-		template <typename _tNeurotransmitter = tNeurotransmitter_Default>
+		// Neurons maintain both dendrites and axons to assist algorithms (like backprop) with neighbor neuron checking
+		template <typename _tNeurotransmitter = Default::tNeurotransmitter>
 		class _Neuron : public std::enable_shared_from_this< _Neuron<_tNeurotransmitter> >
 		{
 		public:
-			typedef _tNeurotransmitter				tNeurotransmitter;
-			typedef _Neuron< tNeurotransmitter >	tNeuron;
+			typedef _tNeurotransmitter					tNeurotransmitter;
+			typedef _Neuron< tNeurotransmitter >		tNeuron;
 
 			TOOLBOX_MEMORY_POINTERS( tNeuron )
 
-			typedef std::map< wPtr, tNeurotransmitter, std::owner_less<wPtr> >	tDendrites;	// Neuron inputs & weights
-			typedef std::list< wPtr >			tAxons;		// Neuron outputs
+			typedef std::map< wPtr, tNeurotransmitter,
+						std::owner_less<wPtr> >			tDendrites;	// Neuron inputs & weights
+			typedef std::list< wPtr >					tAxons;		// Neuron outputs
+
+		public:
+			tDendrites									Dendrites;
+			tAxons										Axons;
+
+			tNeurotransmitter							Threshold;		// Only fire if it is '>=' this value
 
 		public:
 			_Neuron():
+				Threshold( tNeurotransmitter() ),
 				_Processed( false ),
-				_CurValue( tNeurotransmitter(0) ),
-				_PrevValue( tNeurotransmitter(0) ),
-				_Threshold( tNeurotransmitter(0.5) )
+				_Activated( false ),
+				_CurValue( tNeurotransmitter() ),
+				_PrevValue( tNeurotransmitter() )
+			{
+			}
+
+			_Neuron( const tNeurotransmitter &threshold ):
+				Threshold( threshold ),
+				_Processed( false ),
+				_Activated( false ),
+				_CurValue( tNeurotransmitter() ),
+				_PrevValue( tNeurotransmitter() )
 			{
 			}
 
 			virtual ~_Neuron() = 0;
+
+			virtual std::string Label() const
+			{
+				std::stringstream label("");
+				label << this;
+				return label.str();
+			}
+
+			bool Processed() const
+			{
+				return _Processed;
+			}
+
+			bool Activated() const
+			{
+				return _Activated;
+			}
 
 			const tNeurotransmitter &Value() const
 			{
@@ -171,21 +279,6 @@ namespace Toolbox
 				_Processed = false;
 			}
 
-			const tNeurotransmitter &Threshold() const
-			{
-				return _Threshold;
-			}
-
-			void SetThreshold( tNeurotransmitter threshold )
-			{
-				_Threshold = threshold;
-			}
-
-			const tDendrites &Dendrites() const
-			{
-				return _Dendrites;
-			}
-
 			void AddDendrite( Ptr neuron )
 			{
 				AddDendrite( neuron, _generateRandomWeight() );
@@ -201,11 +294,6 @@ namespace Toolbox
 			{
 				_removeDendrite( neuron );
 				neuron->_removeAxon( this->shared_from_this() );
-			}
-
-			const tAxons &Axons() const
-			{
-				return _Axons;
 			}
 
 			void AddAxon( Ptr neuron )
@@ -230,9 +318,9 @@ namespace Toolbox
 				if ( !neuron )
 					throw std::runtime_error( "Toolbox::NeuralNetwork::RemoveDendrite(): No neuron provided." );
 
-				auto d = _Dendrites.find( neuron );
+				auto d = Dendrites.find( neuron );
 
-				if ( d == _Dendrites.end() )
+				if ( d == Dendrites.end() )
 					throw std::runtime_error( "Toolbox::NeuralNetwork::GetWeight(): Neuron not found." );
 
 				return d->second;
@@ -242,10 +330,11 @@ namespace Toolbox
 			void NeedsProcessing()
 			{
 				_Processed = false;
+				_Activated = false;
 			}
 
 			// Should be called from children even if return value is ignored -- Tracking this is faster than tracking unique additions to processing lists
-			virtual bool Process()
+			virtual bool Process( bool useThreshold = true )
 			{
 				bool NeedsProcessing = !_Processed;
 				_Processed = true;
@@ -253,62 +342,58 @@ namespace Toolbox
 			}
 
 		protected:
-			tDendrites			_Dendrites;
-			tAxons				_Axons;
-
 			bool				_Processed;
+			bool				_Activated;
 
 			tNeurotransmitter	_CurValue;
 			tNeurotransmitter	_PrevValue;
-
-			tNeurotransmitter	_Threshold;		// Only fire if it is '>=' this value
 
 		protected:
 			// The private versions only act on 'this', but public versions maintain both sides
 			void _addDendrite( Ptr neuron, tNeurotransmitter initialWeight )
 			{
 				if ( !neuron )
-					throw std::runtime_error( "Toolbox::NeuralNetwork::AddDendrite(): No neuron provided." );
+					throw std::runtime_error( "Toolbox::NeuralNetwork::_tNeuron<>::AddDendrite(): No neuron provided." );
 
-				_Dendrites.insert( std::pair<wPtr, tNeurotransmitter>(wPtr(neuron), initialWeight) );
+				Dendrites.insert( std::pair<wPtr, tNeurotransmitter>(wPtr(neuron), initialWeight) );
 			}
 
 			void _removeDendrite( Ptr neuron )
 			{
 				if ( !neuron )
-					throw std::runtime_error( "Toolbox::NeuralNetwork::RemoveDendrite(): No neuron provided." );
+					throw std::runtime_error( "Toolbox::NeuralNetwork::_tNeuron<>::RemoveDendrite(): No neuron provided." );
 
-				auto d = _Dendrites.find( neuron );
+				auto d = Dendrites.find( neuron );
 
-				if ( d == _Dendrites.end() )
-					throw std::runtime_error( "Toolbox::NeuralNetwork::RemoveDendrite(): Neuron not found." );
+				if ( d == Dendrites.end() )
+					throw std::runtime_error( "Toolbox::NeuralNetwork::_tNeuron<>::RemoveDendrite(): Neuron not found." );
 
-				_Dendrites.erase( d );
+				Dendrites.erase( d );
 			}
 
 			void _addAxon( Ptr neuron )
 			{
 				if ( !neuron )
-					throw std::runtime_error( "Toolbox::NeuralNetwork::AddAxon(): No neuron provided." );
+					throw std::runtime_error( "Toolbox::NeuralNetwork::_tNeuron<>::AddAxon(): No neuron provided." );
 
-				_Axons.push_back( neuron );
+				Axons.push_back( neuron );
 			}
 
 			void _removeAxon( Ptr neuron )
 			{
 				if ( !neuron )
-					throw std::runtime_error( "Toolbox::NeuralNetwork::RemoveAxon(): No neuron provided." );
+					throw std::runtime_error( "Toolbox::NeuralNetwork::_tNeuron<>::RemoveAxon(): No neuron provided." );
 
-				for ( auto a = _Axons.begin(), a_end = _Axons.end(); a != a_end; ++a )
+				for ( auto a = Axons.begin(), a_end = Axons.end(); a != a_end; ++a )
 				{
 					if ( a->lock() == neuron )
 					{
-						_Axons.erase( a );
+						Axons.erase( a );
 						return;
 					}
 				}
 
-				throw std::runtime_error( "Toolbox::NeuralNetwork::RemoveAxon(): Neuron not found." );
+				throw std::runtime_error( "Toolbox::NeuralNetwork::_tNeuron<>::RemoveAxon(): Neuron not found." );
 			}
 
 			static tNeurotransmitter _generateRandomWeight()
@@ -326,24 +411,38 @@ namespace Toolbox
 		{
 		}
 
-
 		// Now that the neuron has been defined, we can define our default summation function
 		// NOTE: The _Neuron<> used here is the base neuron class
 		template <typename tNeurotransmitter>
-		tNeurotransmitter tNucleus<tNeurotransmitter>::Summation( std::shared_ptr< _Neuron<tNeurotransmitter> > self )
+		tNeurotransmitter tNucleus<tNeurotransmitter>::Accumulator( std::shared_ptr< _Neuron<tNeurotransmitter> > self )
 		{
 			if ( !self )
-				throw std::runtime_error( "Toolbox::NeuralNetwork::Nucleus::Summation(): No 'self' neuron provided!" );
+				throw std::runtime_error( "Toolbox::NeuralNetwork::tNucleus<>::Accumulator(): No 'self' neuron provided!" );
 
-			tNeurotransmitter Value = tNeurotransmitter( 0 );
+			tNeurotransmitter Value = tNeurotransmitter();
 
-			// Sum up the weighted inputs
-			for ( auto d = self->Dendrites().begin(), d_end = self->Dendrites().end(); d != d_end; ++d )
+			// Check to see if we're an input/bias neuron
+			if ( self->Dendrites.empty() )
 			{
-				auto Dendrite = (d->first).lock();
+				// If we are, then the value is its previous value since it should have been set already (but the current could be manipulated before we get called)
+				Value = self->PrevValue();
+			}
+			else
+			{
+				// Sum up the weighted inputs
+				for ( auto d = self->Dendrites.begin(), d_end = self->Dendrites.end(); d != d_end; ++d )
+				{
+					auto Dendrite = (d->first).lock();
 
-				if ( Dendrite )
-					Value += Dendrite->Value() * d->second;
+					if ( Dendrite && (Dendrite->Activated() || Dendrite->Dendrites.empty()) )
+					{
+						// Handle recursive neurons
+						if ( Dendrite == self )
+							Value += Dendrite->PrevValue() * d->second;
+						else
+							Value += Dendrite->Value() * d->second;
+					}
+				}
 			}
 
 			return Value;
@@ -363,39 +462,58 @@ namespace Toolbox
 
 			typedef _Neuron< tNeurotransmitter >			Parent;
 
+			// An interface/container for our activation functions, and related items
+			// All neurons of this type will always use the same type of nucleus (hence static)
+			static tNucleus								 	Nucleus;
+
 		public:
+			tNeuron()
+			{
+			}
+
+			tNeuron( const tNeurotransmitter &threshold ):
+				Parent( threshold )
+			{
+			}
+
 			virtual ~tNeuron()
 			{
 			}
 
 			// Returns 'true' if the neuron fires during procesing
-			virtual bool Process()
+			virtual bool Process( bool useThreshold = true )
 			{
 				// Check with our parent about processing (also sets internal state...should be called even if the return value is ignored)
-				if ( !Parent::Process() )
+				if ( !Parent::Process(useThreshold) )
 					return false;
 
 				this->_PrevValue = this->_CurValue;
-				this->_CurValue = tNeurotransmitter( 0 );
+				this->_CurValue = tNeurotransmitter();		// Zero out our value to prepare for our accumulator
 
-				this->_CurValue = this->_Nucleus.Summation( this->shared_from_this() );
+				// Update our value
+				this->_CurValue = this->Nucleus.Accumulator( this->shared_from_this() );
 
-				this->_CurValue = this->_Nucleus.Activation( this->_CurValue );
+				// If we have no dendrites, assume we're an input/bias neuron and activate 100% of the time
+				if ( this->Dendrites.empty() )
+					this->_Activated = true;
+				else
+				{
+					// Otherwise, run it through our activation function/check the threshold
+					this->_CurValue = this->Nucleus.Activation( this->_CurValue );
 
-				if ( this->_CurValue >= this->_Threshold )
-					return true;
+					// If we're not using a threshold (bias instead), or if we exceed the set threshold
+					if ( !useThreshold || this->_CurValue >= this->Threshold )
+						this->_Activated = true;
+				}
+
+				return this->_Activated;
 			}
-
-		protected:
-			// An interface/container for our activation functions, and related items
-			// All neurons of this type will always use the same type of nucleus (hence static)
-			static tNucleus 	_Nucleus;
 		};
 
 
 		// Make sure to declare our static nucleus
 		template <typename tNucleus>
-		tNucleus tNeuron< tNucleus >::_Nucleus;
+		tNucleus tNeuron< tNucleus >::Nucleus;
 
 
 		// Then define our default Neuron type
@@ -410,6 +528,7 @@ namespace Toolbox
 			typedef _tNucleus								tNucleus;
 			typedef typename tNucleus::tNeurotransmitter	tNeurotransmitter;
 			typedef tLabeledNeuron< tNucleus >				ttLabeledNeuron;
+			typedef tNeuron< tNucleus >						Parent;
 
 			TOOLBOX_MEMORY_POINTERS( tLabeledNeuron )
 
@@ -419,7 +538,13 @@ namespace Toolbox
 			{
 			}
 
-			tLabeledNeuron( const std::string &label ):
+			tLabeledNeuron( const tNeurotransmitter &threshold ):
+				Parent( threshold )
+			{
+			}
+
+			tLabeledNeuron( const std::string &label, const tNeurotransmitter &threshold = tNeurotransmitter() ):
+				Parent( threshold ),
 				_Label( label )
 			{
 			}
@@ -428,7 +553,7 @@ namespace Toolbox
 			{
 			}
 
-			const std::string &Label() const
+			virtual std::string Label() const
 			{
 				return _Label;
 			}
