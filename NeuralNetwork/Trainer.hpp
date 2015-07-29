@@ -33,7 +33,8 @@ namespace Toolbox
 	{
 		namespace Default
 		{
-			const double LearningRate		= 0.2;				// The learning rate for the network (Should be -gt 0 && -lt 1)
+			const double LearningRate		= 0.3;				// The learning rate for the network (Should be -gt 0 && -lt 1)
+			const double Momentum			= 0.2;				// The learning momentum for the network (Should be -gt 0 && -lt 1)
 			const double AllowedError		= 0.001;			// The allowed margin of error (0.10 = 10%, 0.001 = 0.1%)
 			const size_t MaxTrainingCycles	= 100000;			// How many training cycles to run through before giving up
 
@@ -100,6 +101,11 @@ namespace Toolbox
 		public:
 			tTrainingSet()
 			{
+			}
+
+			tTrainingSet( const ttGanglion &copyIO )
+			{
+				CopyIOFrom( copyIO );
 			}
 
 			~tTrainingSet()
@@ -252,6 +258,7 @@ namespace Toolbox
 
 		public:
 			tNeurotransmitter										LearningRate;
+			tNeurotransmitter										Momentum;
 			tNeurotransmitter										AllowedError;			// The allowed margin of error to be considered "trained"
 			size_t													MaxTrainingCycles;		// Max overall training cycles -- 0 allows infinite
 			size_t													MaxProcessingCycles;	// Max network processing cycles per each forward pass -- 0 allows infinite
@@ -259,14 +266,16 @@ namespace Toolbox
 		public:
 			tTrainer():
 				LearningRate( tNeurotransmitter(Default::LearningRate) ),
+				Momentum( tNeurotransmitter(Default::Momentum) ),
 				AllowedError( tNeurotransmitter(Default::AllowedError) ),
 				MaxTrainingCycles( Default::MaxTrainingCycles ),
 				MaxProcessingCycles( Default::MaxProcessingCycles )
 			{
 			}
 
-			tTrainer( const tNeurotransmitter &learningRate, const tNeurotransmitter &marginOfError = tNeurotransmitter(Default::AllowedError), size_t maxTrainingCycles = Default::MaxTrainingCycles, size_t maxProcessingCycles = Default::MaxProcessingCycles ):
+			tTrainer( const tNeurotransmitter &learningRate, const tNeurotransmitter &momentum = tNeurotransmitter(Default::Momentum), const tNeurotransmitter &marginOfError = tNeurotransmitter(Default::AllowedError), size_t maxTrainingCycles = Default::MaxTrainingCycles, size_t maxProcessingCycles = Default::MaxProcessingCycles ):
 				LearningRate( learningRate ),
+				Momentum( momentum ),
 				AllowedError( marginOfError ),
 				MaxTrainingCycles( maxTrainingCycles ),
 				MaxProcessingCycles( maxProcessingCycles )
@@ -289,12 +298,15 @@ namespace Toolbox
 			{
 				std::map< typename _Neuron<tNeurotransmitter>::Ptr, tNeurotransmitter >		_Error;
 				std::map< typename _Neuron<tNeurotransmitter>::Ptr,
-					std::map<typename _Neuron<tNeurotransmitter>::Ptr, tNeurotransmitter >>	_WeightUpdates;
+					std::map<typename _Neuron<tNeurotransmitter>::Ptr, tNeurotransmitter >>	_WeightUpdates, _PrevWeightUpdates;
 
 				tNeurotransmitter SetError = tNeurotransmitter();				// The total error for a set, and ultimately our return value
 				size_t TrainingSetSize = set.Size();
 				size_t NumOutputs = network.Output.size();
 				bool Trained = false;
+
+				if ( TrainingSetSize <= 0 )
+					throw std::runtime_error("Toolbox::NeuralNetwork::Trainer::Train(): Training set is empty.");
 
 				// Until our margin of error is low enough...
 				for ( unsigned int CurCycle = 0; ; ++CurCycle )
@@ -304,6 +316,7 @@ namespace Toolbox
 						break;
 
 					SetError = tNeurotransmitter();
+					_PrevWeightUpdates.clear();
 
 					// Loop through our training set
 					for ( size_t CurRecord = 0; CurRecord < TrainingSetSize; ++CurRecord )
@@ -346,8 +359,14 @@ namespace Toolbox
 								if ( !DendriteNeuron )
 									continue;
 
+								tNeurotransmitter CurMomentum = tNeurotransmitter();
+
+								// Verify we have a previous weight to work with for our momentum
+								if ( !_PrevWeightUpdates.empty() )
+									CurMomentum = _PrevWeightUpdates[ OutputNeuron ][ DendriteNeuron ];
+
 								tNeurotransmitter WeightUpdate = -LearningRate * Error * OutputNeuron->Nucleus.Derivation(OutputNeuron->Value()) * DendriteNeuron->Value();
-								_WeightUpdates[ OutputNeuron ][ DendriteNeuron ] += WeightUpdate;
+								_WeightUpdates[ OutputNeuron ][ DendriteNeuron ] += WeightUpdate + CurMomentum;
 								++NumOutputs;
 							}
 
@@ -397,8 +416,14 @@ namespace Toolbox
 									if ( !DendriteNeuron )
 										continue;
 
+									tNeurotransmitter CurMomentum = tNeurotransmitter();
+
+									// Verify we have a previous weight to work with for our momentum
+									if ( !_PrevWeightUpdates.empty() )
+										CurMomentum = _PrevWeightUpdates[ HiddenNeuron ][ DendriteNeuron ];
+
 									tNeurotransmitter WeightUpdate = -LearningRate * Error * HiddenDerivation * DendriteNeuron->Value();
-									_WeightUpdates[ HiddenNeuron ][ DendriteNeuron ] += WeightUpdate;
+									_WeightUpdates[ HiddenNeuron ][ DendriteNeuron ] += WeightUpdate + CurMomentum;
 								}
 							}
 						}
@@ -419,12 +444,13 @@ namespace Toolbox
 								}
 							}
 
+							_PrevWeightUpdates = _WeightUpdates;
 							_WeightUpdates.clear();
 						}
 					}
 
 					// Sometimes interesting/helpful to see, but not something that should be "on" by default...candidate for a DEBUG flag or similar
-					//std::cout << "Cur Cycle: " << CurCycle << "  Error: " << SetError << "  (Allowed: " << AllowedError << ")" << std::endl;
+					std::cout << "Cur Cycle: " << CurCycle << "  Error: " << SetError << "  (Allowed: " << AllowedError << ")" << std::endl;
 
 					// If we get through the training set and have no errors, we're "trained" and should head to the validation set (if one was provided)
 					if ( SetError <= AllowedError )
@@ -449,6 +475,7 @@ namespace Toolbox
 							}
 						}
 
+						_PrevWeightUpdates = _WeightUpdates;
 						_WeightUpdates.clear();
 					}
 				}

@@ -240,7 +240,7 @@ int main( int argc, char *argv[] )
 		std::cout << "---------------------------------------" << std::endl;
 
 // For easy disabling
-#if 1
+#if 0
 		//
 		// This section shows the creation and assignment of a completely pre-built neural network
 		// The model network is the one found here: http://mattmazur.com/2015/03/17/a-step-by-step-backpropagation-example/
