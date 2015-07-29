@@ -150,6 +150,9 @@ int main( int argc, char *argv[] )
 		//
 		// Create the structure for a simple network capable of solving XOR using the "pre-built" feedforward network
 		//
+		std::cout << "---------------------------------------" << std::endl;
+		std::cout << " XOR" << std::endl;
+		std::cout << "---------------------------------------" << std::endl;
 		Feedforward::Ptr XORNet = std::make_shared< Feedforward >();
 		XORNet->NewInput( "Input 1" );
 		XORNet->NewInput( "Input 2" );
@@ -157,7 +160,7 @@ int main( int argc, char *argv[] )
 		XORNet->NewOutput( "Output" );
 		XORNet->ConnectNetwork();
 
-		std::cout << "The initial network state:" << std::endl;
+		std::cout << "  The initial XOR network state:" << std::endl;
 		PrintGanglion( XORNet );
 
 		//
@@ -197,58 +200,68 @@ int main( int argc, char *argv[] )
 
 		double Error = 0;						// This allows us to get our optional error return parameter so we know exactly how trained our network is
 
-		std::cout << "Training XOR dataset... (ON: " << ON << ", OFF: " << OFF << ")" << std::endl;
+		std::cout << "  Training XOR dataset... (ON: " << ON << ", OFF: " << OFF << ")" << std::endl;
 		if ( Backprop.BatchTrain(*XORNet, XORSet, &Error) )
-			std::cout << "XOR dataset learned.  (Error: " << Error << ")" << std::endl;
+			std::cout << "  * XOR dataset learned.  (Error: " << Error << ")" << std::endl;
 		else
-			std::cout << "XOR dataset NOT learned!  (Error: " << Error << ")" << std::endl;
+			std::cout << "  * XOR dataset NOT learned!  (Error: " << Error << ")" << std::endl;
 
-		std::cout << "The trained network state:" << std::endl;
+		std::cout << "  The trained XOR network state:" << std::endl;
 		PrintGanglion( XORNet );
 
 		Error = 0;								// Prepare to read the error again during validation
 
-		std::cout << "Validating XOR dataset..." << std::endl;
+		std::cout << "  Validating XOR dataset..." << std::endl;
 		if ( Backprop.Validate(*XORNet, XORSet, &Error) ) 
-			std::cout << "XOR dataset validated.  (Error: " << Error << ")" << std::endl;
+			std::cout << "  * XOR dataset validated.  (Error: " << Error << ")" << std::endl;
 		else
-			std::cout << "XOR dataset NOT validated!  (Error: " << Error << ")" << std::endl;
+			std::cout << "  * XOR dataset NOT validated!  (Error: " << Error << ")" << std::endl;
 
-		std::cout << "Manual validation of XOR dataset (allows for visualization too):" << std::endl;
+		std::cout << "  Manual validation of XOR dataset (allows for visualization too):" << std::endl;
 		XORNet->SetInput( "Input 1", OFF );
 		XORNet->SetInput( "Input 2", OFF );
 		XORNet->Process();
-		std::cout << "OFF, OFF: " << XORNet->GetOutput( "Output" ) << std::endl;
+		std::cout << "  OFF, OFF: " << XORNet->GetOutput( "Output" ) << std::endl;
 
 		XORNet->SetInput( "Input 1", ON );
 		XORNet->SetInput( "Input 2", OFF );
 		XORNet->Process();
-		std::cout << " ON, OFF: " << XORNet->GetOutput( "Output" ) << std::endl;
+		std::cout << "   ON, OFF: " << XORNet->GetOutput( "Output" ) << std::endl;
 
 		XORNet->SetInput( "Input 1", OFF );
 		XORNet->SetInput( "Input 2", ON );
 		XORNet->Process();
-		std::cout << "OFF,  ON: " << XORNet->GetOutput( "Output" ) << std::endl;
+		std::cout << "  OFF,  ON: " << XORNet->GetOutput( "Output" ) << std::endl;
 
 		XORNet->SetInput( "Input 1", ON );
 		XORNet->SetInput( "Input 2", ON );
 		XORNet->Process();
-		std::cout << " ON,  ON: " << XORNet->GetOutput( "Output" ) << std::endl;
+		std::cout << "   ON,  ON: " << XORNet->GetOutput( "Output" ) << std::endl;
+		std::cout << "---------------------------------------" << std::endl;
 
-#if 0
+// For easy disabling
+#if 1
 		//
 		// This section shows the creation and assignment of a completely pre-built neural network
 		// The model network is the one found here: http://mattmazur.com/2015/03/17/a-step-by-step-backpropagation-example/
 		//
+		std::cout << "---------------------------------------" << std::endl;
+		std::cout << " http://mattmazur.com/2015/03/17/a-step-by-step-backpropagation-example/" << std::endl;
+		std::cout << "---------------------------------------" << std::endl;
 		Feedforward::Ptr StepByStepNet = std::make_shared< Feedforward >();
 
+		// Create the basic network framework
 		StepByStepNet->NewInput( "1" );
 		StepByStepNet->NewInput( "2" );
 		StepByStepNet->NewHiddenLayer( 2 );
 		StepByStepNet->NewOutput( "1" );
 		StepByStepNet->NewOutput( "2" );
-		StepByStepNet->ConnectStepByStepNetwork();
 
+		// And connect everything (this can be done manually too, but for fully-connected feedforward nets, this is fine)
+		StepByStepNet->ConnectNetwork();
+
+		// Set custom weight values on each specific neuron...keep in mind that each dendrite holds the weight value for each associated input
+		// There is only 1 hidden layer, so the first Hidden index is simply 0.  If we had two hidden layers, an index of 1 would address the 2nd layer, etc.
 		StepByStepNet->Hidden[0][0]->Dendrites[ StepByStepNet->Input["1"] ] = 0.15;
 		StepByStepNet->Hidden[0][0]->Dendrites[ StepByStepNet->Input["2"] ] = 0.20;
 		StepByStepNet->Hidden[0][0]->Dendrites[ StepByStepNet->BiasNeuron ] = 0.35;
@@ -262,18 +275,21 @@ int main( int argc, char *argv[] )
 		StepByStepNet->Output[ "2" ]->Dendrites[ StepByStepNet->Hidden[0][1] ] = 0.55;
 		StepByStepNet->Output[ "2" ]->Dendrites[ StepByStepNet->BiasNeuron ] = 0.60;
 
+		// Setting the input values as well
 		StepByStepNet->SetInput( "1", 0.05 );
 		StepByStepNet->SetInput( "2", 0.10 );
 
-		std::cout << "The initial network state:" << std::endl;
+		std::cout << "  The initial network state:" << std::endl;
 		PrintGanglion( StepByStepNet );
-		std::cout << "\n\n" << std::endl;
 
+		// Run a forward-pass of the network
 		StepByStepNet->Process();
 
+		// Get the outputs
 		double Out1 = StepByStepNet->GetOutput( "1" );
 		double Out2 = StepByStepNet->GetOutput( "2" );
 
+		// And run a couple of the calculations from the tutorial to verify
 		double Error1 = (0.01 - Out1);
 		Error1 = (Error1 * Error1) / 2;
 
@@ -284,6 +300,7 @@ int main( int argc, char *argv[] )
 
 		std::cout << "Out 1: " << Out1 << "  Out 2: " << Out2 << std::endl;
 		std::cout << "Error 1: " << Error1 << "  Error 2: " << Error2 << "  Total Error: " << TotalError << std::endl;
+		std::cout << "---------------------------------------" << std::endl;
 #endif // 0
     }
     catch ( std::exception &ex )
