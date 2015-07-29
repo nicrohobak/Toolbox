@@ -206,7 +206,8 @@ int main( int argc, char *argv[] )
 		std::cout << "The trained network state:" << std::endl;
 		PrintGanglion( XORNet );
 
-		Error = 0;
+		Error = 0;								// Prepare to read the error again during validation
+
 		std::cout << "Validating XOR dataset..." << std::endl;
 		if ( Backprop.Validate(*XORNet, XORSet, &Error) ) 
 			std::cout << "XOR dataset validated.  (Error: " << Error << ")" << std::endl;
