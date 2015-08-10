@@ -11,7 +11,9 @@
 #include <Toolbox/NeuralNetwork/Trainer.hpp>
 
 
-// Uses the default neuron behavior (multi-layer, feed-forward)
+//////////////////////////////////////////////////////////////////////////////
+// Typedefs, variable definitions, etc.
+//////////////////////////////////////////////////////////////////////////////
 using Toolbox::NeuralNetwork::Nucleus;			// From <Toolbox/NeuralNetwork/Neuron.hpp>
 using Toolbox::NeuralNetwork::Neuron;
 using Toolbox::NeuralNetwork::LabeledNeuron;
@@ -25,17 +27,16 @@ using Toolbox::NeuralNetwork::TrainingSet;
 using Toolbox::NeuralNetwork::Trainer;
 
 
-//
 // A couple of "typing savers" for our training data
 // The default network type uses a sigmoid activation, so our default ON/OFF values need to reflect that
-//
 const double OFF = Toolbox::NeuralNetwork::Default::OFF::Sigmoid;
 const double ON  = Toolbox::NeuralNetwork::Default::ON::Sigmoid;
+//////////////////////////////////////////////////////////////////////////////
 
 
-//
+//////////////////////////////////////////////////////////////////////////////
 // Here are a few quick/dirty functions that let us peer into the network
-//
+//////////////////////////////////////////////////////////////////////////////
 void PrintNeuron( Neuron::Ptr neuron, unsigned int indent_spaces = 2 )
 {
 	if ( !neuron )
@@ -104,7 +105,6 @@ void PrintNeuron( Neuron::Ptr neuron, unsigned int indent_spaces = 2 )
 }
 
 
-
 void PrintGanglion( Ganglion::Ptr network, unsigned int indent_spaces = 2 )
 {
 	if ( !network )
@@ -141,6 +141,31 @@ void PrintGanglion( Ganglion::Ptr network, unsigned int indent_spaces = 2 )
 
 	std::cout << Indent << "---------------------------------------" << std::endl;
 }
+//////////////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////////////
+// Prepare an "easy interface" to work with training data in its raw form
+//////////////////////////////////////////////////////////////////////////////
+struct XORRow
+{
+	double Input[ 2 ];
+	double Output[ 1 ];
+};
+
+
+const size_t XORData_Max = 4;
+
+const XORRow XORData[ XORData_Max ] =
+{
+	// Inputs        Outputs
+	//   1    2        1
+	{ { OFF, OFF },	{ OFF }	},
+	{ {  ON, OFF },	{  ON }	},
+	{ { OFF,  ON },	{  ON }	},
+	{ {  ON,  ON },	{ OFF }	}
+};
+//////////////////////////////////////////////////////////////////////////////
 
 
 int main( int argc, char *argv[] )
@@ -164,51 +189,41 @@ int main( int argc, char *argv[] )
 		PrintGanglion( XORNet );
 
 		//
-		// Training Data
+		// Prepare Training Data
+		// Use our prepared XORData above to populate our XORSet
 		//
-		TrainingSet XORSet;
-		XORSet.CopyIOFrom( *XORNet );			// Copy the inputs and outputs from our network
+		TrainingSet XORSet( *XORNet );			// Copy the inputs and outputs from our network
+		TrainingData NewRow;					// Note: If any inputs or output names don't match those of in the TrainingSet, they will be ignored when being added to the TrainingSet!
 
-		TrainingData NewRow;
-		NewRow.Input[ "Input 1" ] = OFF;		// If the input name here doesn't match one that exists within the TrainingSet, it will be ignored by the TrainingSet when adding the data
-		NewRow.Input[ "Input 2" ] = OFF;
-		NewRow.Output[ "Output" ] = OFF;		// Same with output names that don't match
-		XORSet.AddRecord( NewRow );
-
-		NewRow.Clear();
-		NewRow.Input[ "Input 1" ] = ON;
-		NewRow.Input[ "Input 2" ] = OFF;
-		NewRow.Output[ "Output" ] = ON;
-		XORSet.AddRecord( NewRow );
-
-		NewRow.Clear();
-		NewRow.Input[ "Input 1" ] = OFF;
-		NewRow.Input[ "Input 2" ] = ON;
-		NewRow.Output[ "Output" ] = ON;
-		XORSet.AddRecord( NewRow );
-
-		NewRow.Clear();
-		NewRow.Input[ "Input 1" ] = ON;
-		NewRow.Input[ "Input 2" ] = ON;
-		NewRow.Output[ "Output" ] = OFF;
-		XORSet.AddRecord( NewRow );
+		for ( size_t x = 0; x < XORData_Max; ++x )
+		{
+			NewRow.Clear();
+			NewRow.Input[ "Input 1" ] = XORData[ x ].Input[ 0 ];
+			NewRow.Input[ "Input 2" ] = XORData[ x ].Input[ 1 ];
+			NewRow.Output[ "Output" ] = XORData[ x ].Output[ 0 ];
+			XORSet.AddRecord( NewRow );
+		}
 
 		//
-		// Training
+		// Train the network
 		//
 		Trainer Backprop;
 
 		double Error = 0;						// This allows us to get our optional error return parameter so we know exactly how trained our network is
+		size_t NumCycles = 0;					// This allows us to get our optional count of how many cycles it took our network to train
 
 		std::cout << "  Training XOR dataset... (ON: " << ON << ", OFF: " << OFF << ")" << std::endl;
-		if ( Backprop.BatchTrain(*XORNet, XORSet, &Error) )
-			std::cout << "  * XOR dataset learned.  (Error: " << Error << ")" << std::endl;
+		if ( Backprop.BatchTrain(*XORNet, XORSet, &Error, &NumCycles) )
+			std::cout << "  * XOR dataset learned.  (Cycles: " << NumCycles << ", Error: " << Error << ")" << std::endl;
 		else
-			std::cout << "  * XOR dataset NOT learned!  (Error: " << Error << ")" << std::endl;
+			std::cout << "  * XOR dataset NOT learned!  (Cycles: " << NumCycles << ", Error: " << Error << ")" << std::endl;
 
 		std::cout << "  The trained XOR network state:" << std::endl;
 		PrintGanglion( XORNet );
 
+		//
+		// Validate the network (typically with a different data set, but in this case we just reuse the original training data)
+		//
 		Error = 0;								// Prepare to read the error again during validation
 
 		std::cout << "  Validating XOR dataset..." << std::endl;
@@ -217,6 +232,9 @@ int main( int argc, char *argv[] )
 		else
 			std::cout << "  * XOR dataset NOT validated!  (Error: " << Error << ")" << std::endl;
 
+		//
+		// Manual Testing
+		//
 		std::cout << "  Manual validation of XOR dataset (allows for visualization too):" << std::endl;
 		XORNet->SetInput( "Input 1", OFF );
 		XORNet->SetInput( "Input 2", OFF );

@@ -293,8 +293,7 @@ namespace Toolbox
 			}
 
 			// Incremental training updates the weights after each run of the network, whereas batch training only updates after the entire set has been seen
-			// TODO: Add momentum
-			virtual bool Train( ttGanglion &network, const ttTrainingSet &set, tNeurotransmitter *networkError = NULL, bool incrementalTraining = true )
+			virtual bool Train( ttGanglion &network, const ttTrainingSet &set, tNeurotransmitter *networkError = NULL, size_t *numCycles = NULL, bool incrementalTraining = true )
 			{
 				std::map< typename _Neuron<tNeurotransmitter>::Ptr, tNeurotransmitter >		_Error;
 				std::map< typename _Neuron<tNeurotransmitter>::Ptr,
@@ -308,13 +307,10 @@ namespace Toolbox
 				if ( TrainingSetSize <= 0 )
 					throw std::runtime_error("Toolbox::NeuralNetwork::Trainer::Train(): Training set is empty.");
 
-				// Until our margin of error is low enough...
-				for ( unsigned int CurCycle = 0; ; ++CurCycle )
+				// Until our margin of error is low enough or until we crap out
+				unsigned int CurCycle = 0;
+				for ( ; MaxTrainingCycles != 0 && CurCycle < MaxTrainingCycles; ++CurCycle )
 				{
-					// ...or until we cap out
-					if ( MaxTrainingCycles != 0 && CurCycle >= MaxTrainingCycles )
-						break;
-
 					SetError = tNeurotransmitter();
 					_PrevWeightUpdates.clear();
 
@@ -450,7 +446,7 @@ namespace Toolbox
 					}
 
 					// Sometimes interesting/helpful to see, but not something that should be "on" by default...candidate for a DEBUG flag or similar
-					std::cout << "Cur Cycle: " << CurCycle << "  Error: " << SetError << "  (Allowed: " << AllowedError << ")" << std::endl;
+					//std::cout << "Cur Cycle: " << CurCycle << "  Error: " << SetError << "  (Allowed: " << AllowedError << ")" << std::endl;
 
 					// If we get through the training set and have no errors, we're "trained" and should head to the validation set (if one was provided)
 					if ( SetError <= AllowedError )
@@ -480,15 +476,18 @@ namespace Toolbox
 					}
 				}
 
+				if ( numCycles )
+					*numCycles = CurCycle;
+
 				if ( networkError )
 					*networkError = SetError;
 
 				return Trained;
 			}
 
-			bool BatchTrain( ttGanglion &network, const ttTrainingSet &set, tNeurotransmitter *networkError = NULL )
+			bool BatchTrain( ttGanglion &network, const ttTrainingSet &set, tNeurotransmitter *networkError = NULL, size_t *numCycles = NULL )
 			{
-				return this->Train( network, set, networkError, false );
+				return this->Train( network, set, networkError, numCycles, false );
 			}
 
 			// Checks a data set and returns the network error for the set
