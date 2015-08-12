@@ -27,7 +27,7 @@ namespace Toolbox
 		// Mutation function for alleles of type bool
 		//
 		template <>
-		void Allele< bool >::Mutate( const Default::tMutationFactor &factor )
+		void Allele< bool >::Mutate( const tMutationFactor &factor )
 		{
 			static std::uniform_int_distribution< int >		d{ 0, 1 };   // Coin toss
 			static std::random_device						rd;
@@ -45,7 +45,7 @@ namespace Toolbox
 		// Mutation function for alleles of type char
 		//
 		template <>
-		void Allele< char >::Mutate( const Default::tMutationFactor &factor )
+		void Allele< char >::Mutate( const tMutationFactor &factor )
 		{
 			static std::uniform_real_distribution< tMutationFactor >	d{ tMutationFactor(0.0), tMutationFactor(1.0) };	// Generate within this range
 			static std::random_device									rd;
@@ -84,7 +84,7 @@ namespace Toolbox
 		// Mutation function for alleles of type int
 		//
 		template <>
-		void Allele< int >::Mutate( const Default::tMutationFactor &factor )
+		void Allele< int >::Mutate( const tMutationFactor &factor )
 		{
 			static std::random_device									rd;
 			static std::default_random_engine							e( rd() );
@@ -104,7 +104,7 @@ namespace Toolbox
 		// Mutation function for alleles of type float
 		//
 		template <>
-		void Allele< float >::Mutate( const Default::tMutationFactor &factor )
+		void Allele< float >::Mutate( const tMutationFactor &factor )
 		{
 			static std::random_device									rd;
 			static std::default_random_engine							e( rd() );
