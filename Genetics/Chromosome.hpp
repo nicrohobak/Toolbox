@@ -1,15 +1,16 @@
-#ifndef TOOLBOX_GENETICS_CHROMOSOME_H
-#define TOOLBOX_GENETICS_CHROMOSOME_H
+#ifndef TOOLBOX_GENETICS_CHROMOSOME_HPP
+#define TOOLBOX_GENETICS_CHROMOSOME_HPP
 
 /*
- * chromosome.h
+ * Chromosome.hpp
  *
- *
+ * The "core" of the genetic algorithm.  Gene information (alleles) grouped into
+ * chromosomes (logical groupings of different alleles).
  */
-
 
 #include <map>
 #include <memory>
+#include <random>
 #include <sstream>
 #include <string>
 
@@ -20,10 +21,22 @@ namespace Toolbox
 {
 	namespace Genetics
 	{
+		namespace Default
+		{
+			typedef float			tMutationRate;			// How often something mutates
+			typedef tMutationRate	tMutationFactor;		// To what extent something mutates
+
+			const tMutationRate		MutationRate	= 0.2f;	// 20%
+			const tMutationFactor	MutationFactor	= 1.0f;	// Often a multiplication factor to the newly generated allele value
+		}
+
+
 		class tAllele : public std::enable_shared_from_this< tAllele >
 		{
 		public:
 			TOOLBOX_MEMORY_POINTERS( tAllele )
+
+			typedef Default::tMutationFactor		tMutationFactor;
 
 		public:
 			tAllele()
@@ -34,7 +47,7 @@ namespace Toolbox
 			{
 			}
 
-			virtual void Mutate( unsigned int rate = 0 ) = 0;	// Re-arrange the data in some way that is meaningful to the underlying data type
+			virtual void Mutate( const tMutationFactor &rate = tMutationFactor() ) = 0;	// Re-arrange the data in some way that is meaningful to the underlying data type
 
 			template <typename tDataType>
 			tDataType Get();
@@ -48,6 +61,8 @@ namespace Toolbox
 		{
 		public:
 			TOOLBOX_MEMORY_POINTERS( Allele<tAlleleType> )
+
+			typedef Default::tMutationFactor		tMutationFactor;
 
 		public:
 			Allele()
@@ -63,7 +78,7 @@ namespace Toolbox
 			{
 			}
 
-			virtual void Mutate( unsigned int rate = 0 );		// Each Allele type used will need to have a Mutate() function defined
+			virtual void Mutate( const tMutationFactor &rate = tMutationFactor() );		// Each Allele type used will need to have a Mutate() function defined
 
 			tAlleleType Get() const
 			{
@@ -96,22 +111,22 @@ namespace Toolbox
 
 			typedef unsigned int					tDominance;
 			typedef char							tGender;
-			typedef unsigned int					tMutationRate;
+			typedef Default::tMutationRate			tMutationRate;
 			typedef tMutationRate					tMutationFactor;
 
 			static const tGender					Autosome = 0;
 
 		public:
-			tDominance				Dominance;
-			tGender					Gender;
+			tDominance								Dominance;
+			tGender									Gender;
 			std::map< std::string, tAllele::Ptr >	Alleles;
 
 		public:
 			Chromosome():
 				Dominance( tDominance() ),
 				Gender( tGender() ),
-				_mutationRate( tMutationRate() ),
-				_mutationFactor( tMutationFactor() )
+				_mutationRate( Default::MutationRate ),
+				_mutationFactor( Default::MutationFactor )
 			{
 			}
 
@@ -124,7 +139,7 @@ namespace Toolbox
 				Alleles = copy.Alleles;
 			}
 
-			Chromosome( tDominance dominance, tGender gender = tGender(), tMutationRate rate = tMutationRate(), tMutationRate factor = tMutationFactor() ):
+			Chromosome( tDominance dominance, tGender gender = tGender(), tMutationRate rate = Default::MutationRate, tMutationRate factor = Default::MutationFactor ):
 				Dominance( dominance ),
 				Gender( gender ),
 				_mutationRate( rate ),
@@ -144,9 +159,6 @@ namespace Toolbox
 			void SetMutationRate( tMutationRate rate = tMutationRate() )
 			{
 				_mutationRate = rate;
-
-				if ( _mutationRate >= 100 )
-					_mutationRate = 100;
 			}
 
 			tMutationFactor MutationFactor() const
@@ -157,9 +169,6 @@ namespace Toolbox
 			void SetMutationFactor( tMutationFactor factor = tMutationFactor() )
 			{
 				_mutationFactor = factor;
-
-				if ( _mutationFactor >= 100 )
-					_mutationFactor = 100;
 			}
 
 			template <typename tAlleleType>
@@ -183,22 +192,24 @@ namespace Toolbox
 
 				for ( auto a = Alleles.begin(), end = Alleles.end(); a != end; ++a )
 				{
-					if ( !(rand() % (100 - _mutationRate)) )
-					{
-						std::cout << "Mutating chromosome... (rate: " << _mutationRate << ", factor: " << _mutationFactor << ")" << std::endl;
+
+	                static std::uniform_real_distribution< tMutationRate >  d{ tMutationRate(0.0), tMutationRate(1.0) };   // Generate within this range
+	                static std::random_device                       		rd;
+	                static std::default_random_engine               		e( rd() );
+												                
+	                if (  tMutationRate(1.0) - d(e) < _mutationRate )
 						a->second->Mutate( _mutationFactor );
-					}
 				}
 			}
 
 		protected:
-			tMutationRate			_mutationRate;		// Determines mutation rate of chromosomes on gametes produced
-			tMutationFactor			_mutationFactor;	// Determines mutation rate of the data within each allele that gets mutated
+			tMutationRate			_mutationRate;		// Determines mutation rate of chromosomes on gametes produced (how often)
+			tMutationFactor			_mutationFactor;	// Determines mutation rate of the data within each allele that gets mutated (to what extent)
 		};
 	}
 }
 
-#endif // TOOLBOX_GENETICS_CHROMOSOME_H
+#endif // TOOLBOX_GENETICS_CHROMOSOME_HPP
 
 
 // vim: tabstop=4 shiftwidth=4

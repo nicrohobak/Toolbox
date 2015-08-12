@@ -1,10 +1,11 @@
-#ifndef TOOLBOX_GENETICS_ORGANISM_H
-#define TOOLBOX_GENETICS_ORGANISM_H
+#ifndef TOOLBOX_GENETICS_ORGANISM_HPP
+#define TOOLBOX_GENETICS_ORGANISM_HPP
 
 /*
- * organism.h
+ * Organism.hpp
  *
- *
+ * Organisms contain genomes and can mate with (combine genomes with) other
+ * organisms via their gametes (sperm/eggs).
  */
 
 
@@ -111,16 +112,19 @@ namespace Toolbox
 
 		public:
 			Organism():
-				MutationRate( 0 ),
-				_numParents( 0 )
+				MutationRate( Default::MutationRate ),
+				_numParents( 1 )
 			{
 			}
 
-			Organism( Genome::Ptr genome, size_t numParents = 0, tMutationRate rate = tMutationRate() ):
+			Organism( Genome::Ptr genome, const tMutationRate &rate = Default::MutationRate ):
 				MutationRate( rate ),
-				_genome( genome ),
-				_numParents( numParents )
+				_genome( genome )
 			{
+				_numParents = genome->HaploidNumber();
+
+				if ( _numParents < 1 )
+					_numParents = 1;
 			}
 
 			~Organism()
@@ -168,28 +172,33 @@ namespace Toolbox
 
 				//size_t HaploidNumber = _genome->HaploidNumber();
 
-				unsigned int Divisor = _numParents;
+				size_t Divisor = _numParents;
 
 				if ( Divisor < 1 )
 					Divisor = 1;
 
+				static std::uniform_real_distribution< tMutationRate >	d{ tMutationRate(0.0), tMutationRate(1.0) };   // Generate within this range
+				static std::random_device								rd;
+				static std::default_random_engine						e( rd() );
+
 				// Add as many allosomes as we need, with some randomization
-				unsigned int NumNeededAllosomes = _genome->Allosomes().size() / Divisor;
+				size_t NumNeededAllosomes = _genome->Allosomes().size() / Divisor;
+
 				for ( auto begin = _genome->Allosomes().begin(), end = _genome->Allosomes().end(), c = begin; c != end && NumNeededAllosomes > 0; )
 				{
-					if ( !(rand() % 2) )
-					{
-						auto NewChromosome = std::make_shared< Chromosome >( Chromosome(*(c->second)) );
+					// Use our number of parents to determine how many sex-linked genes we can skip over safely in order to randomize which is actually passed down
+					static std::uniform_int_distribution< size_t >		dWhichAllosome{ 1, _numParents };
+					size_t SkipCount = _numParents - dWhichAllosome(e);
+					for ( size_t i = 0; i < SkipCount; ++i )
+						++c;
 
-						if ( !MutationRate && (rand() % (100 - MutationRate)) && (rand() % (100 - MutationRate)) )
-						{
-							std::cout << "Checking for gamete allosome mutation..." << std::endl;
-							NewChromosome->Mutate();
-						}
+					auto NewChromosome = std::make_shared< Chromosome >( Chromosome(*(c->second)) );
 
-						NewGamete->AddChromosome( c->first, NewChromosome );
-						--NumNeededAllosomes;
-					}
+					if ( tMutationRate(1.0) - d(e) < MutationRate )
+						NewChromosome->Mutate();
+
+					NewGamete->AddChromosome( c->first, NewChromosome );
+					--NumNeededAllosomes;
 
 					auto Next = c;
 					if ( ++Next == end )
@@ -205,18 +214,15 @@ namespace Toolbox
 
 					size_t NumElements = std::distance( c, LastKey );
 
-					unsigned int Index = 0, Which = rand() % NumElements;
+					static std::uniform_int_distribution< size_t >	dWhichAutosome{ 1, NumElements };   // Generate within this range
+					size_t Index = 0, Which = dWhichAutosome(e) - 1; // -1 to account for the 0-based index
 					for ( auto h = c; h != end && h != LastKey; ++h, ++Index )
 					{
 						if ( Index == Which )
 						{
 							auto NewChromosome = std::make_shared< Chromosome >( Chromosome(*(h->second)) );
-
-							if ( !MutationRate && (rand() % (100 - MutationRate)) && (rand() % (100 - MutationRate)) )
-							{
-								std::cout << "Checking for gamete autosome mutation..." << std::endl;
+							if ( tMutationRate(1.0) - d(e) < MutationRate )
 								NewChromosome->Mutate();
-							}
 
 							NewGamete->AddChromosome( h->first, NewChromosome );
 							break;

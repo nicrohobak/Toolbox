@@ -1,10 +1,11 @@
-#ifndef TOOLBOX_GENETICS_GENOME_H
-#define TOOLBOX_GENETICS_GENOME_H
+#ifndef TOOLBOX_GENETICS_GENOME_HPP
+#define TOOLBOX_GENETICS_GENOME_HPP
 
 /*
- * genome.h
+ * Genome.hpp
  *
- *
+ * Genomes group sets of chromosomes together to create a basic "roadmap" for
+ * organisms created from this genetic information.
  */
 
 
@@ -27,6 +28,8 @@ namespace Toolbox
 			typedef std::list< Chromosome::Ptr >	tChromosomeList;
 			typedef Chromosome::tMutationRate		tMutationRate;
 			typedef Chromosome::tMutationFactor		tMutationFactor;
+
+			typedef std::multimap< std::string, Chromosome::Ptr >	tChromosomes;
 
 		public:
 			Genome()
@@ -108,7 +111,7 @@ namespace Toolbox
 				return RetList;
 			}
 
-			Chromosome::Ptr AddChromosome( const std::string &name, tDominance dominance = tDominance(), tGender gender = tGender(), tMutationRate rate = tMutationRate(), tMutationFactor factor = tMutationFactor() )
+			Chromosome::Ptr AddChromosome( const std::string &name, tDominance dominance = tDominance(), tGender gender = tGender(), tMutationRate rate = Default::MutationRate, tMutationFactor factor = Default::MutationFactor )
 			{
 				Chromosome::Ptr NewChromosome;
 
@@ -137,13 +140,13 @@ namespace Toolbox
 			}
 
 		protected:
-			std::multimap< std::string, Chromosome::Ptr >	_allosomes;
-			std::multimap< std::string, Chromosome::Ptr >	_autosomes;
+			tChromosomes	_allosomes;
+			tChromosomes	_autosomes;
 		};
 	}
 }
 
-#endif // TOOLBOX_GENETICS_GENOME_H
+#endif // TOOLBOX_GENETICS_GENOME_HPP
 
 
 // vim: tabstop=4 shiftwidth=4
