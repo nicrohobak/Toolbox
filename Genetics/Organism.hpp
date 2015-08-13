@@ -53,8 +53,18 @@ namespace Toolbox
 			{
 			}
 
+			Embryo( Gamete::Ptr parent ):
+				_numParents( 1 )
+			{
+				if ( parent )
+				{
+					this->_allosomes = parent->_allosomes;
+					this->_autosomes = parent->_autosomes;
+				}
+			}
+
 			Embryo( Gamete::Ptr parent1, Gamete::Ptr parent2 ):
-				_numParents( 0 )
+				_numParents( 1 )
 			{
 				if ( parent1 )
 				{
@@ -62,13 +72,8 @@ namespace Toolbox
 					this->_autosomes = parent1->_autosomes;
 				}
 
-				if ( parent2 )
-				{
-					this->_allosomes.insert( parent2->_allosomes.begin(), parent2->_allosomes.end() );
-					this->_autosomes.insert( parent2->_autosomes.begin(), parent2->_autosomes.end() );
-				}
-
-				_numParents = 2;
+				// This increments _numParents for us too
+				this->FertilizeWith( parent2 );
 			}
 
 			virtual ~Embryo()
@@ -86,7 +91,8 @@ namespace Toolbox
 				++_numParents;
 			}
 
-			std::shared_ptr< Organism > Gestate();
+			template <typename tOrganism = Organism>
+			std::shared_ptr< tOrganism > Gestate();
 
 		protected:
 			size_t		_numParents;
@@ -113,7 +119,15 @@ namespace Toolbox
 		public:
 			Organism():
 				MutationRate( Default::MutationRate ),
+				_genome( std::make_shared< Genome >() ),
 				_numParents( 1 )
+			{
+			}
+
+			Organism( size_t numParents ):
+				MutationRate( Default::MutationRate ),
+				_genome( std::make_shared< Genome >() ),
+				_numParents( numParents )
 			{
 			}
 
@@ -127,7 +141,7 @@ namespace Toolbox
 					_numParents = 1;
 			}
 
-			~Organism()
+			virtual ~Organism()
 			{
 			}
 
@@ -139,21 +153,20 @@ namespace Toolbox
 			// TODO: For dominance, if two alleles both happen to have the same dominance rating, they should be merged together so that both are expressed...this may require a new function like Mutate() though...
 			// TODO: Mutate() should have default function definitions in their own .hpp file that can be easily included if desired.  Probably one .hpp per function and one .hpp that includes all of them at once
 			template <typename tAlleleType>
-			tAlleleType GetPhenotype( const std::string &trait, const std::string &chromosome = std::string() ) const
+			tAlleleType GetPhenotype( const std::string &chromosome, const std::string &allele = std::string() ) const
 			{
-				tAlleleType RetVal = tAlleleType();
+				if ( chromosome.empty() || allele.empty() )
+					throw std::runtime_error( "Toolbox::Genetics::Organism::GetPhenotype<>(): No chromosome or allele name provided." );
 
-				if ( trait.empty() )
-					return RetVal;
+				if ( !_genome )
+					throw std::runtime_error( "Toolbox::Genetics::Organism::GetPhenotype<>(): Organism has no genome." );
 
-				if ( chromosome )
-				{
-				}
-				else
-				{
-				}
+				auto DominantChromosome = _genome->GetDominantChromosome( chromosome );
 
-				return RetVal;
+				if ( !DominantChromosome )
+					throw std::runtime_error( "Toolbox::Genetics::Organism::GetPhenotype<>(): Chromosome (" + chromosome + ") not found." );
+
+				return DominantChromosome->GetAllele< tAlleleType >( allele );
 			}
 
 			Gamete::Ptr ProduceGamete() const
@@ -241,16 +254,17 @@ namespace Toolbox
 		};
 
 
-		Organism::Ptr Embryo::Gestate()
+		template <typename tOrganism>
+		std::shared_ptr< tOrganism > Embryo::Gestate()
 		{
-			Organism::Ptr NewOrganism = std::make_shared< Organism >( shared_from_this(), _numParents );
+			typename tOrganism::Ptr NewOrganism = std::make_shared< tOrganism >( shared_from_this(), _numParents );
 			return NewOrganism;
 		}
 	}
 }
 
 
-#endif // TOOLBOX_GENETICS_ORGANISM_H
+#endif // TOOLBOX_GENETICS_ORGANISM_HPP
 
 
 // vim: tabstop=4 shiftwidth=4

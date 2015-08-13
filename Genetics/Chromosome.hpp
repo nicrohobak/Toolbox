@@ -192,7 +192,6 @@ namespace Toolbox
 
 				for ( auto a = Alleles.begin(), end = Alleles.end(); a != end; ++a )
 				{
-
 	                static std::uniform_real_distribution< tMutationRate >  d{ tMutationRate(0.0), tMutationRate(1.0) };   // Generate within this range
 	                static std::random_device                       		rd;
 	                static std::default_random_engine               		e( rd() );

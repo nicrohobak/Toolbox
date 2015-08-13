@@ -36,6 +36,7 @@
 /****************************************************************************/
 
 #include <Toolbox/Genetics/Organism.hpp>
+#include <Toolbox/Genetics/Trainer.hpp>
 
 
 #endif // TOOLBOX_GENETICS_HPP

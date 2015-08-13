@@ -73,7 +73,7 @@ namespace Toolbox
 				tChromosomeList RetList;
 
 				if ( name.empty() )
-					return RetList;
+					throw std::runtime_error( "Toolbox::Genetics::Genome::GetAllosome(): No name provided." );
 
 				for ( auto c = _allosomes.find(name), upper = _allosomes.upper_bound(name), end = _allosomes.end(); c != end && c != upper; ++c )
 					RetList.push_back( c->second );
@@ -86,7 +86,7 @@ namespace Toolbox
 				tChromosomeList RetList;
 
 				if ( name.empty() )
-					return RetList;
+					throw std::runtime_error( "Toolbox::Genetics::Genome::GetAutosome(): No name provided." );
 
 				for ( auto c = _autosomes.find(name), upper = _autosomes.upper_bound(name), end = _autosomes.end(); c != end && c != upper; ++c )
 					RetList.push_back( c->second );
@@ -99,7 +99,7 @@ namespace Toolbox
 				tChromosomeList RetList;
 
 				if ( name.empty() )
-					return RetList;
+					throw std::runtime_error( "Toolbox::Genetics::Genome::GetChromosome(): No name provided." );
 
 				tChromosomeList Temp;
 
@@ -111,12 +111,38 @@ namespace Toolbox
 				return RetList;
 			}
 
+			// Gets the dominant version of this chromosome
+			Chromosome::Ptr GetDominantChromosome( const std::string &name ) const
+			{
+				Chromosome::Ptr DominantChromosome;
+
+				if ( name.empty() )
+					throw std::runtime_error( "Toolbox::Genetics::Genome::GetDominantChromosome(): No name provided." );
+
+				auto ChromosomeList = GetChromosome( name );
+
+				tDominance CurLeader = tDominance();
+
+				// Now that we have our list, get the most dominant chromosome and return it
+				for ( auto c = ChromosomeList.begin(), c_end = ChromosomeList.end(); c != c_end; ++c )
+				{
+					if ( (*c)->Dominance > CurLeader || !DominantChromosome )
+					{
+						CurLeader = (*c)->Dominance;
+						DominantChromosome = *c;
+					}
+
+				}
+
+				return DominantChromosome;
+			}
+
 			Chromosome::Ptr AddChromosome( const std::string &name, tDominance dominance = tDominance(), tGender gender = tGender(), tMutationRate rate = Default::MutationRate, tMutationFactor factor = Default::MutationFactor )
 			{
 				Chromosome::Ptr NewChromosome;
 
 				if ( name.empty() )
-					return NewChromosome;
+					throw std::runtime_error( "Toolbox::Genetics::Genome::AddChromosome(): No name provided." );
 
 				NewChromosome = std::make_shared< Chromosome >( dominance, gender, rate, factor );
 
@@ -131,7 +157,7 @@ namespace Toolbox
 			void AddChromosome( const std::string &name, Chromosome::Ptr chromosome )
 			{
 				if ( name.empty() || !chromosome )
-					return;
+					throw std::runtime_error( "Toolbox::Genetics::Genome::AddChromosome(): No nameor chromosome provided." );
 
 				if ( !chromosome->Gender )
 					_autosomes.emplace( name, chromosome );
