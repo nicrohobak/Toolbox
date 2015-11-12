@@ -28,6 +28,7 @@ namespace Toolbox
 		constexpr static int DEFAULT_WIDTH = 800;
 		constexpr static int DEFAULT_HEIGHT = 600;
 
+		// TODO: Make this properly generic
 		virtual void Create( const std::string &title = std::string("Toolbox Application Window"),
 							 int width = DEFAULT_WIDTH,
 							 int height = DEFAULT_HEIGHT,

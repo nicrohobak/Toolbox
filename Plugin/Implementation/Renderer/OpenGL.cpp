@@ -4,6 +4,8 @@
  * NOTE: This plugin requires -lGL
  */
 
+#include <map>
+
 #include <Toolbox/Plugin.hpp>
 #include <Toolbox/Plugin/Interface/Renderer.hpp>
 
@@ -18,8 +20,7 @@
 #include <Toolbox/Plugin/Interface/AppWindow.hpp>
 #include <Toolbox/Plugin/Interface/Renderer.hpp>
 
-#include <SDL2/SDL.h>		// SDL
-#include <GLES3/gl3.h>		// OpenGL
+#include <SDL2/SDL.h>		// For SDL_Delay()
 
 
 int main( int argc, char *argv[] )
@@ -36,31 +37,26 @@ int main( int argc, char *argv[] )
 		Toolbox::Renderer::Ptr Renderer = PluginManager.Create< Toolbox::Renderer >( "OpenGL" );
 
 		// Create an SDL application window with an OpenGL 3.3 rendering context
+		// TODO: Make AppWindow::Create() properly generic
 		AppWin->Create( "Test App", 800, 600, SDL_WINDOW_OPENGL, 3, 3 );
 
-		static const GLfloat TriangleData[] =
+		// Establish vertices for a simple triangle
+		const float TriangleData[] =
 		{    
 			 0.0f,	 0.5f,	 0.0f,
 			 0.5f,	-0.5f,	 0.0f,
 			-0.5f,	-0.5f,	 0.0f,
 		};
-        
-		GLuint Triangle;
-		glGenBuffers( 1, &Triangle );
-		glBindBuffer( GL_ARRAY_BUFFER, Triangle );
-		glBufferData( GL_ARRAY_BUFFER, sizeof(TriangleData), TriangleData, GL_STATIC_DRAW );
 
-		Renderer->BeginFrame();			// Prepare the renderer
+		// Create the Triangle model as we set its vertices
+		Renderer->Model_SetVertices( "Triangle", sizeof(TriangleData), TriangleData );
 
-			// OpenGL Code -- Draw our triangle
-			glBindBuffer( GL_ARRAY_BUFFER, Triangle );
-			glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, 0, 0 );
-			glDrawArrays( GL_TRIANGLES, 0, 3 );
+		Renderer->BeginFrame();						// Prepare the renderer
+			Renderer->Model_Render( "Triangle" );	// Render our triangle
+		Renderer->EndFrame();						// Finalize the renderer
 
-		Renderer->EndFrame();			// Finalize the renderer
-
-		AppWin->Swap();					// Swap the frame buffers to display the rendered image
-
+		AppWin->Swap();								// Swap the frame buffers to display
+													//   the rendered image
 		SDL_Delay( 2000 );
 	}
 	catch ( std::exception &ex )
@@ -76,10 +72,9 @@ int main( int argc, char *argv[] )
 
 namespace Toolbox
 {
-	//
-	// Renderer
-	//
 	DEFINE_TOOLBOX_PLUGIN_D( Renderer, GLRenderer )
+
+		typedef std::map< std::string, GLuint >	tModelMap;
 
 		GLRenderer()
 		{
@@ -93,6 +88,9 @@ namespace Toolbox
 		{
 			if ( _VertexArrayID != GL_INVALID_VALUE )
 				glDeleteVertexArrays( 1, &_VertexArrayID );
+
+			for ( auto m = _Models.begin(), m_end = _Models.end(); m != m_end; ++m )
+				glDeleteBuffers( 1, &m->second );
 		}
 
 		virtual void BeginFrame()
@@ -106,43 +104,93 @@ namespace Toolbox
 			glDisableVertexAttribArray( 0 );
 		}
 
+		virtual void Model_Delete( const std::string &name )
+		{
+			if ( name.empty() )
+				throw std::runtime_error( "OpenGL::GLRenderer::Model_Delete(const std::string &): No model name provided." );
+
+			auto m = _Models.find( name );
+
+			if ( m == _Models.end() )
+				throw std::runtime_error( std::string("OpenGL::GLRenderer::Model_Delete(const std::string &): Model '") + name + " not found." );
+
+			glDeleteBuffers( 1, &(m->second) );
+
+			_Models.erase( m );
+		}
+
+		virtual void Model_Load( const std::string &name, const std::string &fileName )
+		{
+			if ( name.empty() )
+				throw std::runtime_error( "OpenGL::GLRenderer::Model_Load(const std::string &, const float &): No model name provided." );
+
+			return;
+
+			// TODO: Write me
+		}
+
+		virtual void Model_SetVertices( const std::string &name, size_t numVertices, const float *vertices )
+		{
+			if ( name.empty() )
+				throw std::runtime_error( "OpenGL::GLRenderer::Model_SetVertices(const std::string &, const float &): No model name provided." );
+
+			if ( !vertices || numVertices == 0 )
+				throw std::runtime_error( "OpenGL::GLRenderer::Model_SetVertices(const std::string &, const float &): No model data provided." );
+			
+			GLuint ID = model_GetOrCreateID( name );
+
+			glBindBuffer( GL_ARRAY_BUFFER, ID );
+			glBufferData( GL_ARRAY_BUFFER, numVertices, vertices, GL_STATIC_DRAW );
+
+			if ( glGetError() != GL_NO_ERROR )
+				throw std::runtime_error( "OpenGL::GLRenderer::Model_SetVertices(const std::string &, const float &): Error setting buffer data." );
+		}
+
+		virtual void Model_Render( const std::string &name )
+		{
+			glBindBuffer( GL_ARRAY_BUFFER, _Models[name] );
+			glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, 0, 0 );
+			glDrawArrays( GL_TRIANGLES, 0, 3 );
+		}
+
 		protected:
 			GLuint		_VertexArrayID;
+			tModelMap	_Models;
 
-	END_TOOLBOX_PLUGIN_DEF
+		protected:
+			// Gets the current ID, or creates a new one
+			GLuint model_GetOrCreateID( const std::string &name )
+			{
+				GLuint ID = GL_INVALID_VALUE;
 
+				auto m = _Models.find( name );
 
-	//
-	// Texture
-	//
-	DEFINE_TOOLBOX_PLUGIN( Texture, GLTexture )
+				// If it doesn't exist yet, create it
+				if ( m == _Models.end() )
+				{
+					glGenBuffers( 1, &ID );
 
-		virtual void Load( const std::string &fileName )
-		{
-		}
+					if ( glGetError() != GL_NO_ERROR )
+						throw std::runtime_error( "OpenGL::GLRenderer::model_GetID(): Couldn't find/create model ID." );
 
-	END_TOOLBOX_PLUGIN_DEF
+					_Models[ name ] = ID;
+				}
+				else
+					ID = m->second;
 
-
-	//
-	// Shader
-	//
-	DEFINE_TOOLBOX_PLUGIN( Shader, GLShader )
-
-		virtual void Load( const std::string &fileName )
-		{
-		}
+				return ID;
+			}
 
 	END_TOOLBOX_PLUGIN_DEF
 
 
 	extern "C"
 	{
-		DEFINE_TOOLBOX_PLUGIN_INFO( "OpenGL", "0.1", "Renderer, Texture, Shader" )
+		DEFINE_TOOLBOX_PLUGIN_INFO( "OpenGL",
+									"0.1",
+									"Renderer" )
 
 		DEFINE_TOOLBOX_PLUGIN_FACTORY( Renderer, GLRenderer )
-		DEFINE_TOOLBOX_PLUGIN_FACTORY( Texture, GLTexture )
-		DEFINE_TOOLBOX_PLUGIN_FACTORY( Shader, GLShader )
 
 
 		// Optional plugin event functions
