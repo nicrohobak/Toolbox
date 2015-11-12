@@ -118,6 +118,8 @@ namespace Toolbox
 
 	extern "C"
 	{
+		DEFINE_TOOLBOX_PLUGIN_INFO( "SDL2", "0.1", "AppWindow" )
+
 		DEFINE_TOOLBOX_PLUGIN_FACTORY( AppWindow, SDL2 )
 
 		// Optional plugin event functions

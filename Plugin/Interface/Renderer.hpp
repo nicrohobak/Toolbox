@@ -30,10 +30,35 @@
 
 namespace Toolbox
 {
-	DEFINE_TOOLBOX_PLUGIN_INTERFACE( Renderer, 0.1 )
+	const char *Current_Renderer_Version = "0.1";
+
+	//
+	// The main renderer
+	//
+	DEFINE_TOOLBOX_PLUGIN_INTERFACE( Renderer, Current_Renderer_Version )
 
 		virtual void BeginFrame() = 0;
 		virtual void EndFrame() = 0;
+
+	END_TOOLBOX_PLUGIN_DEF
+
+
+	//
+	// Textures
+	//
+	DEFINE_TOOLBOX_PLUGIN_INTERFACE( Texture, Current_Renderer_Version )
+
+		virtual void Load( const std::string &fileName ) = 0;
+
+	END_TOOLBOX_PLUGIN_DEF
+
+
+	//
+	// Shaders
+	//
+	DEFINE_TOOLBOX_PLUGIN_INTERFACE( Shader, Current_Renderer_Version )
+
+		virtual void Load( const std::string &fileName ) = 0;
 
 	END_TOOLBOX_PLUGIN_DEF
 }

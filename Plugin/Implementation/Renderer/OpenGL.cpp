@@ -76,9 +76,12 @@ int main( int argc, char *argv[] )
 
 namespace Toolbox
 {
-	DEFINE_TOOLBOX_PLUGIN_D( Renderer, OpenGL )
+	//
+	// Renderer
+	//
+	DEFINE_TOOLBOX_PLUGIN_D( Renderer, GLRenderer )
 
-		OpenGL()
+		GLRenderer()
 		{
 			glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
 
@@ -86,7 +89,7 @@ namespace Toolbox
 			glBindVertexArray( _VertexArrayID );
 		}
 
-		virtual ~OpenGL()
+		virtual ~GLRenderer()
 		{
 			if ( _VertexArrayID != GL_INVALID_VALUE )
 				glDeleteVertexArrays( 1, &_VertexArrayID );
@@ -109,9 +112,38 @@ namespace Toolbox
 	END_TOOLBOX_PLUGIN_DEF
 
 
+	//
+	// Texture
+	//
+	DEFINE_TOOLBOX_PLUGIN( Texture, GLTexture )
+
+		virtual void Load( const std::string &fileName )
+		{
+		}
+
+	END_TOOLBOX_PLUGIN_DEF
+
+
+	//
+	// Shader
+	//
+	DEFINE_TOOLBOX_PLUGIN( Shader, GLShader )
+
+		virtual void Load( const std::string &fileName )
+		{
+		}
+
+	END_TOOLBOX_PLUGIN_DEF
+
+
 	extern "C"
 	{
-		DEFINE_TOOLBOX_PLUGIN_FACTORY( Renderer, OpenGL )
+		DEFINE_TOOLBOX_PLUGIN_INFO( "OpenGL", "0.1", "Renderer, Texture, Shader" )
+
+		DEFINE_TOOLBOX_PLUGIN_FACTORY( Renderer, GLRenderer )
+		DEFINE_TOOLBOX_PLUGIN_FACTORY( Texture, GLTexture )
+		DEFINE_TOOLBOX_PLUGIN_FACTORY( Shader, GLShader )
+
 
 		// Optional plugin event functions
 		// void onLoad();
