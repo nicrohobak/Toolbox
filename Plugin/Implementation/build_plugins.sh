@@ -23,7 +23,7 @@ for PLUGIN_TYPE in `ls -d */ | sed 's/\///'`; do
 			mkdir -p ${PLUGIN_DIR}/${PLUGIN_TYPE}
 		fi
 
-		echo "Building ${PLUGIN}..."
+		echo "Building ${PLUGIN_TYPE}: ${PLUGIN}..."
 		${CPP} ${C_FLAGS} -o ${PLUGIN_DIR}/${PLUGIN_TYPE}/${PLUGIN} ${PLUGIN_SRC} ${LD_FLAGS}
 	done
 done
