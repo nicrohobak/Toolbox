@@ -15,7 +15,8 @@ PLUGIN_DIR="../Common"
 
 
 for PLUGIN_TYPE in `ls -d */ | sed 's/\///'`; do
-	for PLUGIN_SRC in `ls  ${PLUGIN_TYPE}/*.cpp`; do
+
+	for PLUGIN_SRC in `ls  ${PLUGIN_TYPE}/*.cpp 2> /dev/null`; do
 		PLUGIN=`echo $PLUGIN_SRC | sed "s/${PLUGIN_TYPE}\///" | sed "s/\.cpp/${PLUGIN_EXT}/"`
 
 		# Make sure the target directory exists

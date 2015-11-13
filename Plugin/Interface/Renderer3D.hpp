@@ -1,8 +1,8 @@
-#ifndef TOOLBOX_PLUGIN_INTERFACE_RENDERER_HPP
-#define TOOLBOX_PLUGIN_INTERFACE_RENDERER_HPP
+#ifndef TOOLBOX_PLUGIN_INTERFACE_RENDERER3D_HPP
+#define TOOLBOX_PLUGIN_INTERFACE_RENDERER3D_HPP
 
 /*
- * Generic GL Rendering Interface
+ * Generic 3D Rendering Interface
  *
  * A simple, generic interface for creating a graphics library rendering context.
  */
@@ -10,16 +10,18 @@
 /*****************************************************************************
     // Example use:
 	Toolbox::PluginManager PluginManager;
-	PluginManager.Load( "/usr/local/include/Toolbox/Plugin/Common/AppWindow/SDL2.so" );
-	PluginManager.Load( "/usr/local/include/Toolbox/Plugin/Common/Renderer/OpenGL.so" );
+	PluginManager.Load( "/usr/local/include/Toolbox/Plugin/Common/Multiple/SDL2.so" );
+	PluginManager.Load( "/usr/local/include/Toolbox/Plugin/Common/Renderer3D/OpenGL.so" );
 
 	Toolbox::AppWindow::Ptr AppWin = PluginManager.Create< Toolbox::AppWindow >( "SDL2" );
-	Toolbox::Renderer::Ptr Renderer = PluginManager.Create< Toolbox::Renderer >( "OpenGL" );
+	Toolbox::Renderer3D::Ptr Renderer = PluginManager.Create< Toolbox::Renderer3D >( "OpenGL" );
+
+	Renderer->Model_Load( "MyModel", "./MyModel.3d" );
 
 	// Create an SDL window with an OpenGL 3.3 rendering context
 	AppWin->Create( "SDL2 Window", 800, 600, SDL_WINDOW_OPENGL, 3, 3 );
 		Renderer->BeginFrame();
-			// OpenGL rendering code
+			Renderer->Model_Render( "MyModel" );
 		Renderer->EndFrame();
 		AppWin->Swap();					// Swap VRAM
  	AppWin->Destroy();
@@ -30,7 +32,7 @@
 
 namespace Toolbox
 {
-	DEFINE_TOOLBOX_PLUGIN_INTERFACE( Renderer, "0.1" )
+	DEFINE_TOOLBOX_PLUGIN_INTERFACE( Renderer3D, "0.1" )
 
 		virtual void BeginFrame() = 0;
 		virtual void EndFrame() = 0;
@@ -45,7 +47,7 @@ namespace Toolbox
 }
 
 
-#endif // TOOLBOX_PLUGIN_INTERFACE_RENDERER_HPP
+#endif // TOOLBOX_PLUGIN_INTERFACE_RENDERER3D_HPP
 
 
 // vim: tabstop=4 shiftwidth=4

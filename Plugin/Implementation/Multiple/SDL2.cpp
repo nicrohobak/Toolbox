@@ -4,24 +4,28 @@
  * NOTE: This plugin requires -lSDL2
  */
 
-#include <Toolbox/Plugin.hpp>
-#include <Toolbox/Plugin/Interface/AppWindow.hpp>
+#include <iostream>
 
 #include <SDL2/SDL.h>
 
-#include <iostream>
+#include <Toolbox/Plugin/Interface/AppWindow.hpp>
+#include <Toolbox/Plugin/Interface/Renderer2D.hpp>
+
 
 namespace Toolbox
 {
-	DEFINE_TOOLBOX_PLUGIN_D( AppWindow, SDL2 )
+	//
+	// AppWindow plugin
+	//
+	DEFINE_TOOLBOX_PLUGIN_D( AppWindow, SDL2Window )
 
-		SDL2():
+		SDL2Window():
 			_Window( NULL ),
 			_OpenGLContext( NULL )
 		{
 		}
 
-		virtual ~SDL2()
+		virtual ~SDL2Window()
 		{
 			this->Destroy();
 		}
@@ -116,11 +120,47 @@ namespace Toolbox
 	END_TOOLBOX_PLUGIN_DEF
 
 
+	//
+	// Renderer2D Plugin
+	//
+	DEFINE_TOOLBOX_PLUGIN( Renderer2D, SDL2Renderer )
+
+		virtual void BeginFrame()
+		{
+			// TODO: Write me!
+		}
+
+		virtual void EndFrame()
+		{
+			// TODO: Write me!
+		}
+
+		virtual void Sprite_Delete( const std::string &name )
+		{
+			// TODO: Write me!
+		}
+
+		virtual void Sprite_Load( const std::string &name, const std::string &fileName )
+		{
+			// TODO: Write me!
+		}
+
+		virtual void Sprite_Render( const std::string &name )
+		{
+			// TODO: Write me!
+		}
+
+	END_TOOLBOX_PLUGIN_DEF
+
+
 	extern "C"
 	{
-		DEFINE_TOOLBOX_PLUGIN_INFO( "SDL2", "0.1", "AppWindow" )
+		DEFINE_TOOLBOX_PLUGIN_INFO( "SDL2",
+									"0.1",
+									"AppWindow, Renderer2D" )
 
-		DEFINE_TOOLBOX_PLUGIN_FACTORY( AppWindow, SDL2 )
+		DEFINE_TOOLBOX_PLUGIN_FACTORY( AppWindow, SDL2Window )
+		DEFINE_TOOLBOX_PLUGIN_FACTORY( Renderer2D, SDL2Renderer )
 
 		// Optional plugin event functions
 		// void onLoad();

@@ -7,7 +7,7 @@
 #include <map>
 
 #include <Toolbox/Plugin.hpp>
-#include <Toolbox/Plugin/Interface/Renderer.hpp>
+#include <Toolbox/Plugin/Interface/Renderer3D.hpp>
 
 #include <GLES3/gl3.h>
 
@@ -72,7 +72,7 @@ int main( int argc, char *argv[] )
 
 namespace Toolbox
 {
-	DEFINE_TOOLBOX_PLUGIN_D( Renderer, GLRenderer )
+	DEFINE_TOOLBOX_PLUGIN_D( Renderer3D, GLRenderer )
 
 		typedef std::map< std::string, GLuint >	tModelMap;
 
@@ -188,9 +188,9 @@ namespace Toolbox
 	{
 		DEFINE_TOOLBOX_PLUGIN_INFO( "OpenGL",
 									"0.1",
-									"Renderer" )
+									"Renderer3D" )
 
-		DEFINE_TOOLBOX_PLUGIN_FACTORY( Renderer, GLRenderer )
+		DEFINE_TOOLBOX_PLUGIN_FACTORY( Renderer3D, GLRenderer )
 
 
 		// Optional plugin event functions
