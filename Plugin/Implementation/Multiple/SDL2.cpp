@@ -1,7 +1,8 @@
 /*
  * SDL2-based App Window Plugin
  *
- * NOTE: This plugin requires -lSDL2
+ * Link plugin with: -fPIC -shared -lSDL2
+ * Link main app with: -ldl
  */
 
 #include <iostream>

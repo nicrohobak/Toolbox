@@ -4,15 +4,10 @@
  * NOTE: This plugin requires -lGL
  */
 
-#include <map>
-
-#include <Toolbox/Plugin.hpp>
-#include <Toolbox/Plugin/Interface/Renderer3D.hpp>
-
-#include <GLES3/gl3.h>
-
 /*****************************************************************************
-// Example use (link with: -ldl -lSDL2 -lGL)
+// Link plugin with: -fPIC -shared -lGL
+// Link main app with: -ldl -lSDL2
+// Example use
 #include <iostream>
 #include <stdexcept>
 
@@ -68,6 +63,13 @@ int main( int argc, char *argv[] )
 	return ReturnCode;
 }
 *****************************************************************************/
+
+#include <map>
+
+#include <Toolbox/Plugin.hpp>
+#include <Toolbox/Plugin/Interface/Renderer3D.hpp>
+
+#include <GLES3/gl3.h>
 
 
 namespace Toolbox

@@ -25,7 +25,16 @@ for PLUGIN_TYPE in `ls -d */ | sed 's/\///'`; do
 		fi
 
 		echo "Building ${PLUGIN_TYPE}: ${PLUGIN}..."
-		${CPP} ${C_FLAGS} -o ${PLUGIN_DIR}/${PLUGIN_TYPE}/${PLUGIN} ${PLUGIN_SRC} ${LD_FLAGS}
+
+		# HACK: Make/use a better build system
+
+		if [ "${PLUGIN}" == "OpenGL.so" ]; then
+			${CPP} ${C_FLAGS} -o ${PLUGIN_DIR}/${PLUGIN_TYPE}/${PLUGIN} ${PLUGIN_SRC} ${LD_FLAGS} -lGL
+		elif [ "${PLUGIN}" == "SDL2.so" ]; then
+			${CPP} ${C_FLAGS} -o ${PLUGIN_DIR}/${PLUGIN_TYPE}/${PLUGIN} ${PLUGIN_SRC} ${LD_FLAGS} -lSDL2
+		else
+			${CPP} ${C_FLAGS} -o ${PLUGIN_DIR}/${PLUGIN_TYPE}/${PLUGIN} ${PLUGIN_SRC} ${LD_FLAGS}
+		fi
 	done
 done
 
