@@ -1,12 +1,11 @@
 /*
  * OpenGL Renderer Plugin
  *
- * NOTE: This plugin requires -lGL
+ * Link plugin with: -fPIC -shared -lGL
+ * Link main app with: -ldl (and -lSDL2, if using the example below)
  */
 
 /*****************************************************************************
-// Link plugin with: -fPIC -shared -lGL
-// Link main app with: -ldl -lSDL2
 // Example use
 #include <iostream>
 #include <stdexcept>
@@ -25,7 +24,7 @@ int main( int argc, char *argv[] )
 	try
 	{
 		Toolbox::PluginManager PluginManager;
-		PluginManager.Load( "/usr/local/include/Toolbox/Plugin/Common/AppWindow/SDL2.so" );
+		PluginManager.Load( "/usr/local/include/Toolbox/Plugin/Common/Multiple/SDL2.so" );
 		PluginManager.Load( "/usr/local/include/Toolbox/Plugin/Common/Renderer/OpenGL.so" );
 
 		Toolbox::AppWindow::Ptr AppWin = PluginManager.Create< Toolbox::AppWindow >( "SDL2" );
@@ -108,13 +107,15 @@ namespace Toolbox
 
 		virtual void Model_Delete( const std::string &name )
 		{
+			const std::string dbg_CurFunc( "OpenGL::GLRenderer::Model_Delete(const std::string &)" );
+
 			if ( name.empty() )
-				throw std::runtime_error( "OpenGL::GLRenderer::Model_Delete(const std::string &): No model name provided." );
+				throw std::runtime_error( dbg_CurFunc + ": No model name provided." );
 
 			auto m = _Models.find( name );
 
 			if ( m == _Models.end() )
-				throw std::runtime_error( std::string("OpenGL::GLRenderer::Model_Delete(const std::string &): Model '") + name + " not found." );
+				throw std::runtime_error( dbg_CurFunc + std::string(": Model '") + name + " not found." );
 
 			glDeleteBuffers( 1, &(m->second) );
 
@@ -123,8 +124,10 @@ namespace Toolbox
 
 		virtual void Model_Load( const std::string &name, const std::string &fileName )
 		{
+			const std::string dbg_CurFunc( "OpenGL::GLRenderer::Model_Load(const std::string &, const std::string &)" );
+
 			if ( name.empty() )
-				throw std::runtime_error( "OpenGL::GLRenderer::Model_Load(const std::string &, const float &): No model name provided." );
+				throw std::runtime_error( dbg_CurFunc + ": No model name provided." );
 
 			return;
 
@@ -133,11 +136,13 @@ namespace Toolbox
 
 		virtual void Model_SetVertices( const std::string &name, size_t numVertices, const float *vertices )
 		{
+			const std::string dbg_CurFunc( "OpenGL::GLRenderer::Model_SetVertices(const std::string &, size_t, const float *)" );
+
 			if ( name.empty() )
-				throw std::runtime_error( "OpenGL::GLRenderer::Model_SetVertices(const std::string &, const float &): No model name provided." );
+				throw std::runtime_error( dbg_CurFunc + ": No model name provided." );
 
 			if ( !vertices || numVertices == 0 )
-				throw std::runtime_error( "OpenGL::GLRenderer::Model_SetVertices(const std::string &, const float &): No model data provided." );
+				throw std::runtime_error( dbg_CurFunc + ": No model data provided." );
 			
 			GLuint ID = model_GetOrCreateID( name );
 
@@ -145,7 +150,7 @@ namespace Toolbox
 			glBufferData( GL_ARRAY_BUFFER, numVertices, vertices, GL_STATIC_DRAW );
 
 			if ( glGetError() != GL_NO_ERROR )
-				throw std::runtime_error( "OpenGL::GLRenderer::Model_SetVertices(const std::string &, const float &): Error setting buffer data." );
+				throw std::runtime_error( dbg_CurFunc + ": Error setting buffer data." );
 		}
 
 		virtual void Model_Render( const std::string &name )
@@ -163,6 +168,8 @@ namespace Toolbox
 			// Gets the current ID, or creates a new one
 			GLuint model_GetOrCreateID( const std::string &name )
 			{
+				const std::string dbg_CurFunc( "OpenGL::GLRenderer::model_GetOrCreateID(const std::string &)" );
+
 				GLuint ID = GL_INVALID_VALUE;
 
 				auto m = _Models.find( name );
@@ -173,7 +180,7 @@ namespace Toolbox
 					glGenBuffers( 1, &ID );
 
 					if ( glGetError() != GL_NO_ERROR )
-						throw std::runtime_error( "OpenGL::GLRenderer::model_GetID(): Couldn't find/create model ID." );
+						throw std::runtime_error( dbg_CurFunc + ": Couldn't find/create model ID." );
 
 					_Models[ name ] = ID;
 				}

@@ -4,7 +4,7 @@
 /*
  * Generic 3D Rendering Interface
  *
- * A simple, generic interface for creating a graphics library rendering context.
+ * A simple, generic interface for creating a 3D rendering context.
  */
 
 /*****************************************************************************
