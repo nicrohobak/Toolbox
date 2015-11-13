@@ -25,6 +25,10 @@ END_TOOLBOX_PLUGIN_DEF
 
 extern "C"
 {
+	DEFINE_TOOLBOX_PLUGIN_INFO( "Simple2",
+								"1.0",
+								"SimpleTask" )
+
 	DEFINE_TOOLBOX_PLUGIN_FACTORY( SimpleTask, SimpleImple2 )
 
 	// Optional plugin event functions

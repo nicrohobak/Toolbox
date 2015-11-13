@@ -23,8 +23,8 @@ int main( int argc, char *argv[] )
 		PluginManager.Load( PluginDir + "simple2" + PluginExt );
 
 		// Use the Toolbox::Plugin::Manager to create specific implementations of our SimpleTask interface
-		SimpleTask::Ptr Simple1 = PluginManager.Create< SimpleTask >( "SimpleImple1" );
-		SimpleTask::Ptr Simple2 = PluginManager.Create< SimpleTask >( "SimpleImple2" );
+		SimpleTask::Ptr Simple1 = PluginManager.Create< SimpleTask >( "Simple1" );
+		SimpleTask::Ptr Simple2 = PluginManager.Create< SimpleTask >( "Simple2" );
 		
 		int a = 5, b = 7;
 
