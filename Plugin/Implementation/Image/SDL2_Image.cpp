@@ -1,6 +1,5 @@
 /*
- * SDL2 Image Plugin Common Implementation
- * Implements several Image_Loader plugins
+ * SDL2 Image Plugin
  *
  * Link plugin with: -fPIC -shared -lSDL2_Image
  * Link main app with: -ldl
@@ -15,14 +14,27 @@
 
 namespace Toolbox
 {
-	//
-	// SDL2_Image plugin shared implementation
-	//
 	DEFINE_TOOLBOX_PLUGIN( Image_Plugin, SDL2_Image )
 
-		// Each individual plugin MUST define their own version of this
-		virtual tExtensionList Extensions() const;
-
+		virtual tExtensionList Extensions() const
+		{
+			Image_Plugin::tExtensionList List;
+			List.push_back( std::string("BMP") );
+			List.push_back( std::string("CUR") );
+			List.push_back( std::string("GIF") );
+			List.push_back( std::string("ICO") );
+			List.push_back( std::string("JPG") );
+			List.push_back( std::string("LBM") );
+			List.push_back( std::string("PCX") );
+			List.push_back( std::string("PNG") );
+			List.push_back( std::string("PNM") );
+			List.push_back( std::string("TGA") );
+			List.push_back( std::string("TIF") );
+			List.push_back( std::string("XCF") );
+			List.push_back( std::string("XPM") );
+			List.push_back( std::string("XV") );
+			return List;
+		}
 
 		virtual void Load( const std::string &fileName, Image *r_Img )
 		{
@@ -260,6 +272,33 @@ namespace Toolbox
 		}
 
 	END_TOOLBOX_PLUGIN_DEF
+
+
+	extern "C"
+	{
+		DEFINE_TOOLBOX_PLUGIN_INFO( "SDL2 Image",
+									"0.1",
+									"Image_Plugin" )
+
+		DEFINE_TOOLBOX_PLUGIN_FACTORY( Image_Plugin, SDL2_Image )
+
+		// Optional plugin event functions
+		void onLoad()
+		{
+			constexpr const char *dbg_CurFunc = "Toolbox::Image_Plugin(SDL2_Image)::onLoad()";
+
+			int flags = IMG_INIT_JPG | IMG_INIT_PNG | IMG_INIT_TIF;
+			int status = IMG_Init( flags );
+
+			if ( (status & flags) != flags )
+				throw std::runtime_error( std::string(dbg_CurFunc) + ": Failed to initialize SDL2_Image." );
+		}
+
+		void onUnload()
+		{
+			IMG_Quit();
+		}
+	}
 }
 
 

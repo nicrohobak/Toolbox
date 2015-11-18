@@ -8,11 +8,11 @@
  */
 
 /*****************************************************************************
-	Toolbox::Image::LoadPlugin( "/usr/local/include/Toolbox/Plugin/Common/Image/SDL2_JPG.so" );
-	Toolbox::Image::LoadPlugin( "/usr/local/include/Toolbox/Plugin/Common/Image/SDL2_PNG.so" );
+    // Our SDL2_Image-based Image_Plugin can load a variety of formats
+	Toolbox::Image::LoadPlugin( "/usr/local/include/Toolbox/Plugin/Common/Image/SDL2_Image.so" );
 	Toolbox::Image NewPNG;
 	Toolbox::Image NewJPG( "/path/to/image.jpg" );		// Auto-detected by file extension
-	NewPNG.Load( "/path/to/image.png", "SDL2 PNG" );	// Forced load by a specific plugin
+	NewPNG.Load( "/path/to/image.png", "SDL2 Image" );	// Forced load by a specific plugin
 														// Load() and the constructor take the
 														//   same arguments.
  ****************************************************************************/
