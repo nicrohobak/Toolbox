@@ -14,26 +14,6 @@
  *     dependency)
  * - Plugins MUST link with: -fPIC -shared
  *****************************************************************************
- * Plugin Information:
- *
- * - All plugins MUST define the following items:
- *   - The Toolbox Plugin Class
- *     - MUST be defined before the Toolbox Plugin Interface
- *     - Start definition with:
- *       DEFINE_TOOLBOX_PLUGIN( InterfaceName, PluginName )
- *     - End definition with: END_TOOLBOX_PLUGIN_DEF
- *     - Custom public class definitions can be declared/defined between the
- *       start and end
- *
- *   - The Toolbox Plugin Interface
- *     - NOTE: Everything here is enclosed within an extern "C" {} block
- *     - A Toolbox Plugin Factory
- *       - DEFINE_TOOLBOX_PLUGIN_FACTORY( InterfaceName, PluginName )
- *     - Optionally, all plugins MAY define the following event functions:
- *       - All have prototype:	   void onEvent( void );
- *       - onLoad				-- Called when the plugin is initially loaded
- *       - onUnload				-- Called when the plugin is destroyed
- *****************************************************************************
  * Interface Information:
  *
  *  - All interfaces MUST define the following items:
@@ -43,6 +23,32 @@
  *      - End definition with: END_TOOLBOX_PLUGIN_DEF
  *      - Custom public class definitions can be declared/defined between the
  *        start and end
+ *****************************************************************************
+ * Plugin Information:
+ *
+ * - All plugins MUST define the following items:
+ *   - The Toolbox Plugin Class
+ *     - MUST be defined before the Toolbox Plugin Interface extern "C" {}
+ *       block;
+ *     - Start definition with:
+ *       DEFINE_TOOLBOX_PLUGIN( InterfaceName, PluginName )
+ *     - End definition with: END_TOOLBOX_PLUGIN_DEF
+ *     - Custom public class member definitions can be declared/defined
+ *       between the start and end.
+ *
+ *   - The Toolbox Plugin Interface
+ *     - NOTE: Everything here is enclosed within an extern "C" {} block
+ *     - The Core Plugin Information
+ *       - DEFINE_TOOLBOX_PLUGIN_INFO( name, version, provides )
+ *     - Toolbox Plugin Factor(y/ies)
+ *       - DEFINE_TOOLBOX_PLUGIN_FACTORY( InterfaceName, ImplementationName )
+ *       - The Implementation itself does not need to be contained within the
+ *         extern "C" {} block, allowing for "safe" use of C++ in the
+ *         plugin's implementation.
+ *     - Optionally, all plugins MAY define the following event functions:
+ *       - All have prototype:	   void onEvent( void );
+ *       - onLoad				-- Called when the plugin is initially loaded
+ *       - onUnload				-- Called when the plugin is destroyed
  *****************************************************************************
  * Example code available in <Toolbox/Plugin/example>
  ****************************************************************************/
@@ -313,15 +319,43 @@ namespace Toolbox
 			return _Plugins;
 		}
 
-		void Load( const std::string &fileName )
+		Plugin::Ptr Load( const std::string &fileName )
 		{
-			_Plugins.push_back( std::make_shared< Plugin >(fileName) );
+			Plugin::Ptr NewPlugin = std::make_shared< Plugin >( fileName );
+			_Plugins.push_back( NewPlugin );
+			return NewPlugin;
+		}
+
+		void Unload( const std::string &name )
+		{
+			static const std::string dbg_CurFunc( "Toolbox::PluginManager::Unload(const std::string &)" );
+
+			for ( auto p = _Plugins.begin(), p_end = _Plugins.end(); p != p_end; ++p )
+			{
+				if ( !name.compare((*p)->Name()) )
+				{
+					_Plugins.erase( p );
+					return;
+				}
+			}
+		}
+
+		Plugin::Ptr Find( const std::string &plugin ) const
+		{
+			for ( auto p = _Plugins.begin(), p_end = _Plugins.end(); p != p_end; ++p )
+			{
+				if ( !(*p)->Name().compare(plugin) )
+					return *p;
+			}
+
+			return Plugin::Ptr();
 		}
 
 		template <typename tInterface, typename ... tArgs>
-		typename tInterface::Ptr Create( const std::string &plugin, tArgs ... arguments )
+		typename tInterface::Ptr Create( const std::string &plugin, tArgs ... arguments ) const
 		{
 			typename tInterface::Ptr Instance;
+			static const std::string dbg_CurFunc( "Toolbox::PluginManager::Create(const std::string &, ...)" );
 
 			// Find our desired plugin
 			for ( auto p = _Plugins.begin(), p_end = _Plugins.end(); p != p_end; ++p )
@@ -345,7 +379,7 @@ namespace Toolbox
 			}
 
 			if ( !Instance )
-				throw std::runtime_error( std::string("Toolbox::Plugin::Manager::Create(): Failed to create new ") + tInterface::Name + " ('" + plugin + "' does not have this interface)." );
+				throw std::runtime_error( dbg_CurFunc + ": Failed to create new " + tInterface::Name + " ('" + plugin + "' does not have this interface)." );
 
 			return Instance;
 		}

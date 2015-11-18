@@ -34,15 +34,15 @@ namespace Toolbox
 
 		virtual void Create( const std::string &title, int width, int height, long flags, int glMajorVer, int glMinorVer )
 		{
-			const std::string dbg_CurFunc( "SDL2::Create(const std::string &, int, int, long, int, int)" );
+			constexpr const char *dbg_CurFunc = "SDL2::Create(const std::string &, int, int, long, int, int)";
 
 			if ( SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) )
-				throw std::runtime_error( dbg_CurFunc + std::string(": Failed to initialize SDL: ") + SDL_GetError() );
+				throw std::runtime_error( std::string(dbg_CurFunc) + ": Failed to initialize SDL: " + SDL_GetError() );
 
 			_Window = SDL_CreateWindow( title.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, flags );
 
 			if ( !_Window )
-				throw std::runtime_error( dbg_CurFunc + std::string(": Failed to create the window: ") + SDL_GetError() );
+				throw std::runtime_error( std::string(dbg_CurFunc) + ": Failed to create the window: " + SDL_GetError() );
 
 			if ( !(flags & 1 << SDL_WINDOW_OPENGL) )
 			{
@@ -52,7 +52,7 @@ namespace Toolbox
 				_OpenGLContext = SDL_GL_CreateContext( _Window );
 
 				if ( !_OpenGLContext )
-					throw std::runtime_error( dbg_CurFunc + std::string(": Failed to create the OpenGL context: ") + SDL_GetError() );
+					throw std::runtime_error( std::string(dbg_CurFunc) + ": Failed to create the OpenGL context: " + SDL_GetError() );
 			}
 		}
 
