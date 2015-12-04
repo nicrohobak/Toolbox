@@ -1,5 +1,5 @@
 /*
- * SDL2 Image Plugin
+ * SDL2_Image-based Image_Plugin
  *
  * Link plugin with: -fPIC -shared -lSDL2_Image
  * Link main app with: -ldl

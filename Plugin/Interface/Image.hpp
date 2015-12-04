@@ -57,7 +57,7 @@ namespace Toolbox
 
 	protected:
 		//
-		// setImageWidth/Height() exist to let plugins set select private variables when loading
+		// Let plugins set select private variables when loading via our "friend" status
 		//
 		void setImageWidth( Image &img, size_t width );
 		void setImageHeight( Image &img, size_t width );
@@ -111,10 +111,6 @@ namespace Toolbox
 		{
 			if ( !fileName.empty() )
 				Load( fileName, plugin );
-		}
-
-		~Image()
-		{
 		}
 
 		void Load( const std::string &fileName, const std::string &plugin = std::string("") )
