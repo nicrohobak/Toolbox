@@ -12,6 +12,12 @@
 	Toolbox::PluginManager PluginManager;
 	PluginManager.Load( "/usr/local/include/Toolbox/Plugin/Common/Multiple/SDL2.so" );
 	AppWindow::Ptr AppWin = PluginManager.Create< AppWindow >( "SDL2" );
+
+	// Set desired window options
+	//AppWin->SetOption( Option_OpenGL_Enabled, true );
+	//AppWin->SetOption( Option_OpenGL_MajorVer, 3 );
+	//AppWin->SetOption( Option_OpenGL_MinorVer, 3 );
+
 	AppWin->Create( "SDL2 Window" );
 		// Do things with the window
  	AppWin->Destroy();
@@ -23,18 +29,34 @@
 
 namespace Toolbox
 {
+	enum tAppWindowOption
+	{
+		AppWindowOption_INVALID,
+
+		AppWindowOption_OpenGL_Enabled,
+		AppWindowOption_OpenGL_MajorVer,
+		AppWindowOption_OpenGL_MinorVer,
+
+		AppWindowOption_MAX,
+		AppWindowOption_FIRST = AppWindowOption_OpenGL_Enabled
+	};
+
 	DEFINE_TOOLBOX_PLUGIN_INTERFACE( AppWindow, 0.1 )
 
-		constexpr static int DEFAULT_WIDTH = 800;
-		constexpr static int DEFAULT_HEIGHT = 600;
+		typedef unsigned int	tAppWindowOptionValue;
 
-		// TODO: Make this properly generic
+		constexpr static int	DEFAULT_WIDTH = 800;
+		constexpr static int	DEFAULT_HEIGHT = 600;
+
+		//////////
+
+		virtual void SetOption( tAppWindowOption option, tAppWindowOptionValue value = tAppWindowOptionValue() ) = 0;
+		virtual void UnsetOption( tAppWindowOption option ) = 0;
+		virtual tAppWindowOptionValue GetOption( tAppWindowOption option ) = 0;
+
 		virtual void Create( const std::string &title = std::string("Toolbox Application Window"),
 							 int width = DEFAULT_WIDTH,
-							 int height = DEFAULT_HEIGHT,
-							 long int flags = 0,
-							 int glMajorVer = 0,
-							 int glMinorVer = 0 ) = 0;
+							 int height = DEFAULT_HEIGHT ) = 0;
 
 		virtual void Destroy() = 0;
 
@@ -48,7 +70,7 @@ namespace Toolbox
 
 		virtual void Raise() = 0;									// Raise the window above all others
 
-		virtual void Swap()			{ }								// Swap screen buffers (Optional)
+		virtual void Swap()		{ }									// Swap screen buffers (Optional)
 
 	END_TOOLBOX_PLUGIN_DEF
 }

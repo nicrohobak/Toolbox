@@ -7,6 +7,7 @@
  */
 
 #include <iostream>
+#include <map>
 
 #include <SDL2/SDL.h>
 
@@ -21,6 +22,10 @@ namespace Toolbox
 	//
 	DEFINE_TOOLBOX_PLUGIN_D( AppWindow, SDL2Window )
 
+		typedef std::map< tAppWindowOption, tAppWindowOptionValue >	tAppWindowOptions;
+
+		//////////
+
 		SDL2Window():
 			_Window( NULL ),
 			_OpenGLContext( NULL )
@@ -32,22 +37,77 @@ namespace Toolbox
 			this->Destroy();
 		}
 
-		virtual void Create( const std::string &title, int width, int height, long flags, int glMajorVer, int glMinorVer )
+		virtual void SetOption( tAppWindowOption option, tAppWindowOptionValue value = tAppWindowOptionValue() )
 		{
-			constexpr const char *dbg_CurFunc = "SDL2::Create(const std::string &, int, int, long, int, int)";
+			constexpr const char *dbg_CurFunc = "AppWindow::SDL2Window::SetOption(tAppWindowOption)";
+
+			if ( option == AppWindowOption_INVALID )
+				throw std::runtime_error( std::string(dbg_CurFunc) + ": Setting AppWindowOption_INVALID is not allowed." );
+
+			_WindowOptions[ option ] = value;
+		}
+
+		virtual void UnsetOption( tAppWindowOption option )
+		{
+			//constexpr const char *dbg_CurFunc = "AppWindow::SDL2Window::UnsetOption(tAppWindowOption)";
+
+			auto Opt = _WindowOptions.find( option );
+
+			if ( Opt != _WindowOptions.end() )
+				_WindowOptions.erase( Opt );
+		}
+
+		virtual tAppWindowOptionValue GetOption( tAppWindowOption option )
+		{
+			constexpr const char *dbg_CurFunc = "AppWindow::SDL2Window::GetOption(tAppWindowOption)";
+
+			if ( option == AppWindowOption_INVALID )
+				throw std::runtime_error( std::string(dbg_CurFunc) + ": Setting AppWindowOption_INVALID is not allowed." );
+
+			tAppWindowOptionValue ReturnVal = tAppWindowOptionValue();
+
+			auto Opt = _WindowOptions.find( option );
+
+			// Only assign the value if the option is set
+			if ( Opt != _WindowOptions.end() )
+				ReturnVal = Opt->second;
+
+			return ReturnVal;
+		}
+
+		virtual void Create( const std::string &title, int width, int height )
+		{
+			constexpr const char *dbg_CurFunc = "AppWindow::SDL2Window::Create(const std::string &, int, int)";
 
 			if ( SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER) )
 				throw std::runtime_error( std::string(dbg_CurFunc) + ": Failed to initialize SDL: " + SDL_GetError() );
 
-			_Window = SDL_CreateWindow( title.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, flags );
+			long int WindowFlags = 0;
+
+			if ( _WindowOptions[ AppWindowOption_OpenGL_Enabled ] != 0 )
+				WindowFlags |= SDL_WINDOW_OPENGL;
+
+
+			_Window = SDL_CreateWindow( title.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, WindowFlags );
 
 			if ( !_Window )
 				throw std::runtime_error( std::string(dbg_CurFunc) + ": Failed to create the window: " + SDL_GetError() );
 
-			if ( !(flags & 1 << SDL_WINDOW_OPENGL) )
+			// If we're creating an OpenGL context, do that here
+			if ( !(WindowFlags & 1 << SDL_WINDOW_OPENGL) )
 			{
-				SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, glMajorVer );
-				SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, glMinorVer );
+				int GLMajorVer = this->GetOption( AppWindowOption_OpenGL_MajorVer );
+				int GLMinorVer = this->GetOption( AppWindowOption_OpenGL_MinorVer );;
+
+				// Default version is 3.3
+				if ( GLMajorVer == 0 )
+				{
+					GLMajorVer = 3;
+					GLMinorVer = 3;
+				}
+				
+				SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, GLMajorVer );
+				SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, GLMinorVer );
 
 				_OpenGLContext = SDL_GL_CreateContext( _Window );
 
@@ -118,8 +178,10 @@ namespace Toolbox
 
 
 	protected:
-		SDL_Window *	_Window;
-		SDL_GLContext	_OpenGLContext;
+		SDL_Window *		_Window;
+		SDL_GLContext		_OpenGLContext;
+
+		tAppWindowOptions	_WindowOptions;
 
 	END_TOOLBOX_PLUGIN_DEF
 
@@ -131,27 +193,32 @@ namespace Toolbox
 
 		virtual void BeginFrame()
 		{
-			// TODO: Write me!
+			constexpr const char *dbg_CurFunc = "Renderer2D::SDL2Renderer::BeginFrame()";
+			throw std::runtime_error( std::string(dbg_CurFunc) + ": Not implemented.  (Sorry!)" );
 		}
 
 		virtual void EndFrame()
 		{
-			// TODO: Write me!
+			constexpr const char *dbg_CurFunc = "Renderer2D::SDL2Renderer::EndFrame()";
+			throw std::runtime_error( std::string(dbg_CurFunc) + ": Not implemented.  (Sorry!)" );
 		}
 
 		virtual void Sprite_Delete( const std::string &name )
 		{
-			// TODO: Write me!
+			constexpr const char *dbg_CurFunc = "Renderer2D::SDL2Renderer::Sprite_Delete(const std::string &)";
+			throw std::runtime_error( std::string(dbg_CurFunc) + ": Not implemented.  (Sorry!)" );
 		}
 
 		virtual void Sprite_Load( const std::string &name, const std::string &fileName )
 		{
-			// TODO: Write me!
+			constexpr const char *dbg_CurFunc = "Renderer2D::SDL2Renderer::Sprite_Load(const std::string &)";
+			throw std::runtime_error( std::string(dbg_CurFunc) + ": Not implemented.  (Sorry!)" );
 		}
 
 		virtual void Sprite_Render( const std::string &name )
 		{
-			// TODO: Write me!
+			constexpr const char *dbg_CurFunc = "Renderer2D::SDL2Renderer::Sprite_Render(const std::string &)";
+			throw std::runtime_error( std::string(dbg_CurFunc) + ": Not implemented.  (Sorry!)" );
 		}
 
 	END_TOOLBOX_PLUGIN_DEF
