@@ -14,9 +14,9 @@
 	AppWindow::Ptr AppWin = PluginManager.Create< AppWindow >( "SDL2" );
 
 	// Set desired window options
-	//AppWin->SetOption( Option_OpenGL_Enabled, true );
-	//AppWin->SetOption( Option_OpenGL_MajorVer, 3 );
-	//AppWin->SetOption( Option_OpenGL_MinorVer, 3 );
+	//AppWin->SetOption( Toolbox::AppWindowOption_OpenGL_Enabled, true );
+	//AppWin->SetOption( Toolbox::AppWindowOption_OpenGL_MajorVer, 3 );
+	//AppWin->SetOption( Toolbox::AppWindowOption_OpenGL_MinorVer, 3 );
 
 	AppWin->Create( "SDL2 Window" );
 		// Do things with the window
