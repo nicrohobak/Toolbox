@@ -171,6 +171,11 @@ namespace Toolbox
 			SDL_RaiseWindow( _Window );
 		}
 
+		virtual void Delay( size_t milliseconds )
+		{
+			SDL_Delay( milliseconds );
+		}
+
 		virtual void Swap()
 		{
 			SDL_GL_SwapWindow( _Window );

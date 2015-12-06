@@ -70,6 +70,8 @@ namespace Toolbox
 
 		virtual void Raise() = 0;									// Raise the window above all others
 
+		virtual void Delay( size_t milliseconds ) = 0;				// Delay for X milliseconds
+
 		virtual void Swap()		{ }									// Swap screen buffers (Optional)
 
 	END_TOOLBOX_PLUGIN_DEF
