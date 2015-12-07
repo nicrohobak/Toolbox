@@ -11,8 +11,8 @@
 
 #include <SDL2/SDL.h>
 
-#include <Toolbox/Plugin/Interface/AppWindow.hpp>
-#include <Toolbox/Plugin/Interface/Renderer2D.hpp>
+#include <Toolbox/AppWindow.hpp>
+#include <Toolbox/Renderer2D.hpp>
 
 
 namespace Toolbox

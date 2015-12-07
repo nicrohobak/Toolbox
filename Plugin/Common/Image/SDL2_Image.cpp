@@ -9,7 +9,7 @@
 
 #include <SDL2/SDL_image.h>
 
-#include <Toolbox/Plugin/Interface/Image.hpp>
+#include <Toolbox/Image.hpp>
 
 
 namespace Toolbox

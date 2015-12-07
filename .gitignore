@@ -7,9 +7,6 @@
 Genetics/example/obj
 Genetics/example/example
 
-# Exclude all built common plugins
-Plugin/Common/*
-
 # Exclude all files built by the Plugin example
 Plugin/example/obj
 Plugin/example/plugin
