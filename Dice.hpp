@@ -79,25 +79,25 @@ namespace Toolbox
 			DiceResults Results;
 
 			for ( size_t die = 0; die < numDice; ++die )
-				Results.push_back( d( e ) );
+				Results.push_back( _d(_e) );
 
 			return Results;
 		}
 
 	protected:
-		static std::uniform_int_distribution< size_t >	d;
-		static std::random_device						rd;
-		static std::default_random_engine 				e;
+		static std::uniform_int_distribution< size_t >	_d;
+		static std::random_device						_rd;
+		static std::default_random_engine 				_e;
 	};
 
 	template <size_t _NumSides>
-	std::uniform_int_distribution< size_t >	Dice<_NumSides>::d{ 1, _NumSides };	// Generate within this range
+	std::uniform_int_distribution< size_t >	Dice<_NumSides>::_d{ 1, _NumSides };	// Generate within this range
 
 	template <size_t _NumSides>
-	std::random_device						Dice<_NumSides>::rd;
+	std::random_device						Dice<_NumSides>::_rd;
 
 	template <size_t _NumSides>
-	std::default_random_engine				Dice<_NumSides>::e( rd() );
+	std::default_random_engine				Dice<_NumSides>::_e( _rd() );
 }
 
 
