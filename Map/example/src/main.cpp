@@ -70,17 +70,14 @@ int main( int argc, char *argv[] )
 		Map MyMap;
 
 		// Create a solid 2x2 cube floating in space
+		// Fill in the squares that make up the top of the floating cube and let the RLE encoding fill in the rest
 		auto MapBrush = Map::Tile( MapTile::Tile_Solid );
-		MyMap.PlaceTile( MapBrush, Coordinate(0, 0,  0) );
-		MyMap.PlaceTile( MapBrush, Coordinate(1, 0,  0) );
-		MyMap.PlaceTile( MapBrush, Coordinate(1, 1,  0) );
-		MyMap.PlaceTile( MapBrush, Coordinate(0, 1,  0) );
 		MyMap.PlaceTile( MapBrush, Coordinate(0, 0, -1) );
 		MyMap.PlaceTile( MapBrush, Coordinate(1, 0, -1) );
 		MyMap.PlaceTile( MapBrush, Coordinate(1, 1, -1) );
 		MyMap.PlaceTile( MapBrush, Coordinate(0, 1, -1) );
 
-		// Fill the space below the cube with empty tiles again so it will be just a floating cube instead of a tower that goes to the bottom of the map (RLE encoding)
+		// But, we'll need to fill the space below the cube with empty tiles again so it will be just a floating cube instead of a tower that goes to the bottom of the map (RLE encoding again)
 		MapBrush = Map::Tile( MapTile::Tile_Empty );
 		MyMap.PlaceTile( MapBrush, Coordinate(0, 0, 1) );
 		MyMap.PlaceTile( MapBrush, Coordinate(1, 0, 1) );
@@ -108,6 +105,7 @@ int main( int argc, char *argv[] )
 
 		std::cout << "At Object::(0, 0, 0): " << (int)Object->At(Coordinate(0,0,0)) << std::endl;
 
+		Custom->PlaceToken( Token_Solid, Coordinate(0, 0, 0) );
 		Size = Custom->Size();
 		std::cout << "Custom size -- X: " << Size.X << " Y: " << Size.Y << "  Z: " << Size.Z << std::endl;
 

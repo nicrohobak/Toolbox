@@ -25,7 +25,8 @@
  * - Maps can be given custom tile types through tMap<> template parameters.
  *   Tokens can also be given separate custom tile types through the
  *   tMap<>::tToken<> template parameters.  Tokens take up the same space in
- *   map units as map tiles, but tokens will not be restricted to only
+ *   map units as map tiles, but tokens will not be restricted to only one
+ *   tile in size (they can be "painted" like voxels in a map too).
  *
  * - Map coordinate types can also be modified through tMap<> template
  *   parameters.  A signed type is expected with (0,0,0) as the origin.
