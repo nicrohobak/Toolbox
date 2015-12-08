@@ -7,6 +7,15 @@
  * A generic, plugin-ready image interface.
  */
 
+/* NOTE: Plugin Required! ****************************************************
+
+	 * Default plugin implementation available at:
+		<Toolbox/Plugin/Common/Image>
+
+	* For more information, please refer to <Toolbox/Plugin/README>
+
+ ****************************************************************************/
+
 /*****************************************************************************
     // Our SDL2_Image-based Image_Plugin can load a variety of formats
 	Toolbox::Image::LoadPlugin( "/usr/local/include/Toolbox/Plugin/Common/Image/SDL2_Image.so" );

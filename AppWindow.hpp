@@ -7,7 +7,19 @@
  * A simple, generic interface for creating an application window.
  */
 
+
+/* NOTE: Plugin Required! ****************************************************
+
+	 * Default plugin implementation available at:
+		<Toolbox/Plugin/Common/Multiple>  (SDL2)
+
+	* For more information, please refer to <Toolbox/Plugin/README>
+
+ ****************************************************************************/
+
+
 /*****************************************************************************
+
     // Example use:
 	Toolbox::PluginManager PluginManager;
 	PluginManager.Load( "/usr/local/include/Toolbox/Plugin/Common/Multiple/SDL2.so" );

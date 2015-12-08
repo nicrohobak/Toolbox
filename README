@@ -5,8 +5,10 @@
 - "Installation" is simple -- Copy this directory (or create a symlink to it)
   in your /usr/local/include directory.
 
-- Each tool in this toolbox is designed to be a stand-alone, include-only
-  library.
+- Most tools in this toolbox are designed to be stand-alone, include-only
+  libraries.  However, there are some that require a plugin implementation to
+  function as-expected (if this is the case, this is noted in the notes
+  section along with additional instructions).
 
 - All documentation is included directly within each source file.
 

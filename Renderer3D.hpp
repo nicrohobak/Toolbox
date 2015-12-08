@@ -7,6 +7,15 @@
  * A simple, generic interface for creating a 3D rendering context.
  */
 
+/* NOTE: Plugin Required! ****************************************************
+
+	 * Default plugin implementation available at:
+		<Toolbox/Plugin/Common/Renderer3D>
+
+	* For more information, please refer to <Toolbox/Plugin/README>
+
+ ****************************************************************************/
+
 /*****************************************************************************
     // Example use:
 	Toolbox::PluginManager PluginManager;
