@@ -1,5 +1,5 @@
-#ifndef TOOLBOX_PLUGIN_INTERFACE_RENDERER2D_HPP
-#define TOOLBOX_PLUGIN_INTERFACE_RENDERER2D_HPP
+#ifndef TOOLBOX_RENDERER2D_HPP
+#define TOOLBOX_RENDERER2D_HPP
 
 /*
  * Generic 2D Rendering Interface
@@ -46,7 +46,7 @@ namespace Toolbox
 }
 
 
-#endif // TOOLBOX_PLUGIN_INTERFACE_RENDERER2D_HPP
+#endif // TOOLBOX_RENDERER2D_HPP
 
 
 // vim: tabstop=4 shiftwidth=4

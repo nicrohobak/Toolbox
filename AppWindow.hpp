@@ -1,5 +1,5 @@
-#ifndef TOOLBOX_PLUGIN_INTERFACE_APPWINDOW_HPP
-#define TOOLBOX_PLUGIN_INTERFACE_APPWINDOW_HPP
+#ifndef TOOLBOX_APPWINDOW_HPP
+#define TOOLBOX_APPWINDOW_HPP
 
 /*
  * Generic GUI Application Window Interface
@@ -78,7 +78,7 @@ namespace Toolbox
 }
 
 
-#endif // TOOLBOX_PLUGIN_INTERFACE_APPWINDOW_HPP
+#endif // TOOLBOX_APPWINDOW_HPP
 
 
 // vim: tabstop=4 shiftwidth=4

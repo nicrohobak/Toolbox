@@ -1,5 +1,5 @@
-#ifndef TOOLBOX_PLUGIN_INTERFACE_IMAGE_HPP
-#define TOOLBOX_PLUGIN_INTERFACE_IMAGE_HPP
+#ifndef TOOLBOX_IMAGE_HPP
+#define TOOLBOX_IMAGE_HPP
 
 /*
  * Generic Image
@@ -307,7 +307,7 @@ namespace Toolbox
 }
 
 
-#endif // TOOLBOX_PLUGIN_INTERFACE_IMAGE_HPP
+#endif // TOOLBOX_IMAGE_HPP
 
 
 // vim: tabstop=4 shiftwidth=4

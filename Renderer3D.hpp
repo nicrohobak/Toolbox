@@ -1,5 +1,5 @@
-#ifndef TOOLBOX_PLUGIN_INTERFACE_RENDERER3D_HPP
-#define TOOLBOX_PLUGIN_INTERFACE_RENDERER3D_HPP
+#ifndef TOOLBOX_RENDERER3D_HPP
+#define TOOLBOX_RENDERER3D_HPP
 
 /*
  * Generic 3D Rendering Interface
@@ -360,7 +360,7 @@ namespace Toolbox
 }
 
 
-#endif // TOOLBOX_PLUGIN_INTERFACE_RENDERER3D_HPP
+#endif // TOOLBOX_RENDERER3D_HPP
 
 
 // vim: tabstop=4 shiftwidth=4
