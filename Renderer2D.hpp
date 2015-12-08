@@ -41,7 +41,7 @@
 
 namespace Toolbox
 {
-	DEFINE_TOOLBOX_PLUGIN_INTERFACE( Renderer2D, "0.1" )
+	TOOLBOX_DEFINE_PLUGIN_INTERFACE( Renderer2D, "0.1" )
 
 		virtual void BeginFrame() = 0;
 		virtual void EndFrame() = 0;
@@ -51,7 +51,7 @@ namespace Toolbox
 		virtual void Sprite_Load( const std::string &name, const std::string &fileName ) = 0;
 		virtual void Sprite_Render( const std::string &name ) = 0;
 
-	END_TOOLBOX_PLUGIN_DEF
+	TOOLBOX_END_PLUGIN_DEF
 }
 
 

@@ -7,6 +7,7 @@
  * A generic, plugin-ready image interface.
  */
 
+
 /* NOTE: Plugin Required! ****************************************************
 
 	 * Default plugin implementation available at:
@@ -15,6 +16,7 @@
 	* For more information, please refer to <Toolbox/Plugin/README>
 
  ****************************************************************************/
+
 
 /*****************************************************************************
     // Our SDL2_Image-based Image_Plugin can load a variety of formats
@@ -25,6 +27,7 @@
 														// Load() and the constructor take the
 														//   same arguments.
  ****************************************************************************/
+
 
 #include <Toolbox/Plugin.hpp>
 
@@ -52,7 +55,7 @@ namespace Toolbox
 	//
 	// Image_Plugin interface
 	//
-	DEFINE_TOOLBOX_PLUGIN_INTERFACE( Image_Plugin, "0.1" )
+	TOOLBOX_DEFINE_PLUGIN_INTERFACE( Image_Plugin, "0.1" )
 
 		typedef std::list< std::string >		tExtensionList;
 		typedef std::vector< tColorChannel >	tColorChannels;
@@ -76,7 +79,7 @@ namespace Toolbox
 		void setImageBitOrder( Image &img, const tColorChannels &order );
 		void setImageData( Image &img, const std::string &data );
 
-	END_TOOLBOX_PLUGIN_DEF
+	TOOLBOX_END_PLUGIN_DEF
 
 
 	//
@@ -86,30 +89,7 @@ namespace Toolbox
 	{
 	public:
 		TOOLBOX_MEMORY_POINTERS( Image )
-
-	public:
-		static const PluginManager &PluginMgr()
-		{
-			return _PluginMgr;
-		}
-
-		static void LoadPlugin( const std::string &fileName )
-		{
-			constexpr const char *dbg_CurFunc = "Toolbox::Image::LoadPlugin(const std::string &)";
-			auto NewPlugin = _PluginMgr.Load( fileName );
-
-			// Make sure this plugin implements the interface we need (any valid version is fine for now)
-			if ( !NewPlugin->Version("Image_Plugin").compare(Plugin::Invalid) )
-			{
-				_PluginMgr.Unload( NewPlugin->Name() );
-				throw std::runtime_error( std::string(dbg_CurFunc) + ": Invalid Image plugin." );
-			}
-		}
-
-		static void UnloadPlugin( const std::string &name )
-		{
-			_PluginMgr.Unload( name );
-		}
+		TOOLBOX_DEFINE_STATIC_PLUGIN_MGR( Image, Image_Plugin )
 
 	public:
 		Image( const std::string &fileName = std::string(""), const std::string &plugin = std::string("") ):
@@ -224,9 +204,6 @@ namespace Toolbox
 		}
 
 	protected:
-		static PluginManager			_PluginMgr;
-
-	protected:
 		size_t							_Width;				// Width in pixels
 		size_t							_Height;			// Height in pixels
 		size_t							_Pitch;				// Number of bytes in a row of pixels
@@ -243,7 +220,7 @@ namespace Toolbox
 		friend class Toolbox::Image_Plugin;
 	};
 
-	PluginManager Image::_PluginMgr;
+	TOOLBOX_DECLARE_STATIC_PLUGIN_MGR( Image )
 
 
 	//

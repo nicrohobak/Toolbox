@@ -7,6 +7,7 @@
  * A simple C++ plugin implementation
  */
 
+
 /*****************************************************************************
  * Plugin Requirements:
  *
@@ -19,8 +20,8 @@
  *  - All interfaces MUST define the following items:
  *    - The Toolbox Plugin Interface Class
  *      - Start definition with:
- *        DEFINE_TOOLBOX_PLUGIN_INTERFACE( InterfaceName, VersionStr )
- *      - End definition with: END_TOOLBOX_PLUGIN_DEF
+ *        TOOLBOX_DEFINE_PLUGIN_INTERFACE( InterfaceName, VersionStr )
+ *      - End definition with: TOOLBOX_END_PLUGIN_DEF
  *      - Custom public class definitions can be declared/defined between the
  *        start and end
  *****************************************************************************
@@ -31,17 +32,17 @@
  *     - MUST be defined before the Toolbox Plugin Interface extern "C" {}
  *       block;
  *     - Start definition with:
- *       DEFINE_TOOLBOX_PLUGIN( InterfaceName, PluginName )
- *     - End definition with: END_TOOLBOX_PLUGIN_DEF
+ *       TOOLBOX_DEFINE_PLUGIN( InterfaceName, PluginName )
+ *     - End definition with: TOOLBOX_END_PLUGIN_DEF
  *     - Custom public class member definitions can be declared/defined
  *       between the start and end.
  *
  *   - The Toolbox Plugin Interface
  *     - NOTE: Everything here is enclosed within an extern "C" {} block
  *     - The Core Plugin Information
- *       - DEFINE_TOOLBOX_PLUGIN_INFO( name, version, provides )
+ *       - TOOLBOX_DEFINE_PLUGIN_INFO( name, version, provides )
  *     - Toolbox Plugin Factor(y/ies)
- *       - DEFINE_TOOLBOX_PLUGIN_FACTORY( InterfaceName, ImplementationName )
+ *       - TOOLBOX_DEFINE_PLUGIN_FACTORY( InterfaceName, ImplementationName )
  *       - The Implementation itself does not need to be contained within the
  *         extern "C" {} block, allowing for "safe" use of C++ in the
  *         plugin's implementation.
@@ -53,8 +54,6 @@
  * Example code available in <Toolbox/Plugin/example>
  ****************************************************************************/
 
-/****************************************************************************/
-/****************************************************************************/
 
 #include <algorithm>
 #include <iostream>
@@ -70,8 +69,8 @@ namespace Toolbox
 	/*
 	 * Macros to assist with plugin/interface source creation
 	 */
-	// MUST be closed with END_TOOLBOX_PLUGIN_DEF!
-	#define DEFINE_TOOLBOX_PLUGIN_INTERFACE( tInterface, tVersion )			\
+	// MUST be closed with TOOLBOX_END_PLUGIN_DEF!
+	#define TOOLBOX_DEFINE_PLUGIN_INTERFACE( tInterface, tVersion )			\
 		class tInterface													\
 		{																	\
 		public:																\
@@ -82,10 +81,10 @@ namespace Toolbox
 			virtual ~tInterface() { }
 
 
-	// MUST be closed with END_TOOLBOX_PLUGIN_DEF!
+	// MUST be closed with TOOLBOX_END_PLUGIN_DEF!
 	// Same as above, but with no destructor automatically defined, the user
 	//   MUST provide one
-	#define DEFINE_TOOLBOX_PLUGIN_INTERFACE_D( tInterface, tVersion )		\
+	#define TOOLBOX_DEFINE_PLUGIN_INTERFACE_D( tInterface, tVersion )		\
 		class tInterface													\
 		{																	\
 		public:																\
@@ -95,8 +94,8 @@ namespace Toolbox
 
 
 
-	// MUST be closed with END_TOOLBOX_PLUGIN_DEF!
-	#define DEFINE_TOOLBOX_PLUGIN( tInterface, tImplementation )			\
+	// MUST be closed with TOOLBOX_END_PLUGIN_DEF!
+	#define TOOLBOX_DEFINE_PLUGIN( tInterface, tImplementation )			\
 		class tImplementation : public tInterface							\
 		{																	\
 		public:																\
@@ -105,18 +104,18 @@ namespace Toolbox
 			virtual ~tImplementation() { }
 
 
-	// MUST be closed with END_TOOLBOX_PLUGIN_DEF!
+	// MUST be closed with TOOLBOX_END_PLUGIN_DEF!
 	// Same as above, but with no destructor automatically defined, the user
 	//   MUST provide one
-	#define DEFINE_TOOLBOX_PLUGIN_D( tInterface, tImplementation )			\
+	#define TOOLBOX_DEFINE_PLUGIN_D( tInterface, tImplementation )			\
 		class tImplementation : public tInterface							\
 		{																	\
 		public:																\
 			TOOLBOX_MEMORY_POINTERS( tImplementation )
 
 
-	// Terminates DEFINE_TOOLBOX_PLUGIN*() macros
-	#define END_TOOLBOX_PLUGIN_DEF											\
+	// Terminates TOOLBOX_DEFINE_PLUGIN*() macros
+	#define TOOLBOX_END_PLUGIN_DEF											\
 		};
 
 
@@ -132,7 +131,7 @@ namespace Toolbox
 	// provides - A whitespace and/or comma separated list of interfaces
 	// 			  provided by this plugin
 	//
-	#define DEFINE_TOOLBOX_PLUGIN_INFO( name, version, provides )			\
+	#define TOOLBOX_DEFINE_PLUGIN_INFO( name, version, provides )			\
 		const char *_Name						= name;						\
 		const char *_Version					= version;					\
 		const char *_Provides					= provides;					\
@@ -141,13 +140,59 @@ namespace Toolbox
 	//
 	// Plugin Interface Definitions
 	//
-	#define DEFINE_TOOLBOX_PLUGIN_FACTORY( tInterface, tImplementation )	\
+	#define TOOLBOX_DEFINE_PLUGIN_FACTORY( tInterface, tImplementation )	\
 		const char *_ ## ##tInterface ## _APIVersion	= tInterface::APIVersion;	\
 																			\
 		tInterface::Ptr Create##tInterface()								\
 		{																	\
 			return std::make_shared< tImplementation >();					\
 		}																	\
+
+
+	//
+	// Plugin Manager static class integration
+	// Defines a protected static PluginManager object and some static members to manipulate it
+	// Assumes a singular plugin type and provides a single PluginManager
+	// MUST also use TOOLBOX_DECLARE_STATIC_PLUGIN_MGR (below)
+	//
+	// tParent	- Containing class
+	// tPlugin	- The plugin name
+	//
+	#define TOOLBOX_DEFINE_STATIC_PLUGIN_MGR( tParent, tPlugin )			\
+		protected:															\
+			static PluginManager		_PluginMgr;							\
+																			\
+		public:																\
+			static const PluginManager &PluginMgr()							\
+			{																\
+				return _PluginMgr;											\
+			}																\
+																			\
+			static void LoadPlugin( const std::string &fileName )			\
+			{																\
+				constexpr const char *dbg_CurFunc = "Toolbox::" #tParent "::LoadPlugin(const std::string &)";	\
+				auto NewPlugin = _PluginMgr.Load( fileName );				\
+				/* Make sure this plugin implements the interface we need (any valid version is fine for now */	\
+				if ( !NewPlugin->Version( #tPlugin ).compare(Plugin::Invalid) )	\
+				{															\
+					_PluginMgr.Unload( NewPlugin->Name() );					\
+					throw std::runtime_error( std::string(dbg_CurFunc) + ": Invalid " #tParent " plugin." );	\
+				}															\
+			}																\
+																			\
+			static void UnloadPlugin( const std::string &name )				\
+			{																\
+				_PluginMgr.Unload( name );									\
+			}
+
+	//
+	// Plugin Manager static class integration
+	// Declared outside of the tParent class definition.  MUST be used if TOOLBOX_DEFINE_STATIC_PLUGIN_MGR is used.
+	//
+	// tParent	- Containing class
+	//
+	#define TOOLBOX_DECLARE_STATIC_PLUGIN_MGR( tParent )					\
+		PluginManager tParent::_PluginMgr;
 
 
 	/*
@@ -323,7 +368,7 @@ namespace Toolbox
 	class PluginManager
 	{
 	public:
-		TOOLBOX_MEMORY_POINTERS( PluginManager );
+		TOOLBOX_MEMORY_POINTERS( PluginManager )
 
 	public:
 		PluginManager()

@@ -14,7 +14,7 @@
 
 namespace Toolbox
 {
-	DEFINE_TOOLBOX_PLUGIN( Image_Plugin, SDL2_Image )
+	TOOLBOX_DEFINE_PLUGIN( Image_Plugin, SDL2_Image )
 
 		virtual tExtensionList Extensions() const
 		{
@@ -271,16 +271,16 @@ namespace Toolbox
 			throw std::runtime_error( std::string(dbg_CurFunc) + ": Not implemented!" );
 		}
 
-	END_TOOLBOX_PLUGIN_DEF
+	TOOLBOX_END_PLUGIN_DEF
 
 
 	extern "C"
 	{
-		DEFINE_TOOLBOX_PLUGIN_INFO( "SDL2 Image",
+		TOOLBOX_DEFINE_PLUGIN_INFO( "SDL2 Image",
 									"0.1",
 									"Image_Plugin" )
 
-		DEFINE_TOOLBOX_PLUGIN_FACTORY( Image_Plugin, SDL2_Image )
+		TOOLBOX_DEFINE_PLUGIN_FACTORY( Image_Plugin, SDL2_Image )
 
 		// Optional plugin event functions
 		void onLoad()

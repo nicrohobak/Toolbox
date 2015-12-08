@@ -7,6 +7,7 @@
  * A simple, generic interface for creating a 3D rendering context.
  */
 
+
 /* NOTE: Plugin Required! ****************************************************
 
 	 * Default plugin implementation available at:
@@ -15,6 +16,7 @@
 	* For more information, please refer to <Toolbox/Plugin/README>
 
  ****************************************************************************/
+
 
 /*****************************************************************************
     // Example use:
@@ -200,7 +202,7 @@ namespace Toolbox
 	//
 	// Model_Plugin
 	//
-	DEFINE_TOOLBOX_PLUGIN_INTERFACE( Model_Plugin, "0.1" )
+	TOOLBOX_DEFINE_PLUGIN_INTERFACE( Model_Plugin, "0.1" )
 
 		typedef std::list< std::string >		tExtensionList;
 
@@ -217,7 +219,7 @@ namespace Toolbox
 		void setModelTexture( Model &model, const Texture &texture );
 */
 
-	END_TOOLBOX_PLUGIN_DEF
+	TOOLBOX_END_PLUGIN_DEF
 
 
 	//
@@ -227,30 +229,7 @@ namespace Toolbox
 	{
 	public:
 		TOOLBOX_MEMORY_POINTERS_AND_LISTS( Model )
-
-	public:
-		static const PluginManager &PluginMgr()
-		{
-			return _PluginMgr;
-		}
-
-		static void LoadPlugin( const std::string &fileName )
-		{
-			constexpr const char *dbg_CurFunc = "Toolbox::Model::LoadPlugin(const std::string &)";
-			auto NewPlugin = _PluginMgr.Load( fileName );
-
-			// Make sure this plugin implements the interface we need (any valid version is fine for now)
-			if ( !NewPlugin->Version("Model_Plugin").compare(Plugin::Invalid) )
-			{
-				_PluginMgr.Unload( NewPlugin->Name() );
-				throw std::runtime_error( std::string(dbg_CurFunc) + ": Invalid Model plugin." );
-			}
-		}
-
-		static void UnloadPlugin( const std::string &name )
-		{
-			_PluginMgr.Unload( name );
-		}
+		TOOLBOX_DEFINE_STATIC_PLUGIN_MGR( Model, Model_Plugin )
 
 	public:
 		Model( const std::string &fileName = std::string(""), const std::string &plugin = std::string("") )
@@ -285,13 +264,10 @@ namespace Toolbox
 		// Texture
 		// Shader(s)
 
-	protected:
-		static PluginManager	_PluginMgr;
-
 		friend class Toolbox::Model_Plugin;
 	};
 
-	PluginManager Model::_PluginMgr;
+	TOOLBOX_DECLARE_STATIC_PLUGIN_MGR( Model )
 
 
 	//
@@ -308,7 +284,7 @@ namespace Toolbox
 	//
 	// Renderer3D -- The main renderer interface
 	//
-	DEFINE_TOOLBOX_PLUGIN_INTERFACE( Renderer3D, "0.1" )
+	TOOLBOX_DEFINE_PLUGIN_INTERFACE( Renderer3D, "0.1" )
 
 		//
 		// Core
@@ -345,7 +321,7 @@ namespace Toolbox
 		virtual void Model_SetVertices( const std::string &model, size_t numVertices, const float *vertices ) = 0;
 		virtual void Model_Render( const std::string &model ) = 0;
 
-	END_TOOLBOX_PLUGIN_DEF
+	TOOLBOX_END_PLUGIN_DEF
 }
 
 

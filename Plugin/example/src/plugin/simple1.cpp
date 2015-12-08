@@ -7,7 +7,7 @@
 #include "../SimpleTask_interface.h"
 
 
-DEFINE_TOOLBOX_PLUGIN( SimpleTask, SimpleImple1 )
+TOOLBOX_DEFINE_PLUGIN( SimpleTask, SimpleImple1 )
 
 	virtual const std::string &Operation()
 	{
@@ -20,16 +20,16 @@ DEFINE_TOOLBOX_PLUGIN( SimpleTask, SimpleImple1 )
 		return input * 5;
 	}
 
-END_TOOLBOX_PLUGIN_DEF
+TOOLBOX_END_PLUGIN_DEF
 
 
 extern "C"
 {
-	DEFINE_TOOLBOX_PLUGIN_INFO( "Simple1",
+	TOOLBOX_DEFINE_PLUGIN_INFO( "Simple1",
 								"1.0",
 								"SimpleTask" )
 
-	DEFINE_TOOLBOX_PLUGIN_FACTORY( SimpleTask, SimpleImple1 )
+	TOOLBOX_DEFINE_PLUGIN_FACTORY( SimpleTask, SimpleImple1 )
 
 	// Optional plugin event functions
 	// void onLoad();

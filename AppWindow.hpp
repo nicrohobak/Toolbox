@@ -53,7 +53,8 @@ namespace Toolbox
 		AppWindowOption_FIRST = AppWindowOption_OpenGL_Enabled
 	};
 
-	DEFINE_TOOLBOX_PLUGIN_INTERFACE( AppWindow, 0.1 )
+
+	TOOLBOX_DEFINE_PLUGIN_INTERFACE( AppWindow, 0.1 )
 
 		typedef unsigned int	tAppWindowOptionValue;
 
@@ -62,7 +63,8 @@ namespace Toolbox
 
 		//////////
 
-		virtual void SetOption( tAppWindowOption option, tAppWindowOptionValue value = tAppWindowOptionValue() ) = 0;
+		virtual void SetOption( tAppWindowOption option,
+								tAppWindowOptionValue value = tAppWindowOptionValue() ) = 0;
 		virtual void UnsetOption( tAppWindowOption option ) = 0;
 		virtual tAppWindowOptionValue GetOption( tAppWindowOption option ) = 0;
 
@@ -86,7 +88,7 @@ namespace Toolbox
 
 		virtual void Swap()		{ }									// Swap screen buffers (Optional)
 
-	END_TOOLBOX_PLUGIN_DEF
+	TOOLBOX_END_PLUGIN_DEF
 }
 
 

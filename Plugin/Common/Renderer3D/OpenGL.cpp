@@ -176,7 +176,7 @@ namespace Toolbox
 	};
 
 
-	DEFINE_TOOLBOX_PLUGIN_D( Renderer3D, GLRenderer )
+	TOOLBOX_DEFINE_PLUGIN_D( Renderer3D, GLRenderer )
 
 		typedef std::map< std::string, GLShader >	tShaderMap;
 		typedef std::map< std::string, GLModel >	tModelMap;
@@ -379,16 +379,16 @@ namespace Toolbox
 					return m->second;
 			}
 
-	END_TOOLBOX_PLUGIN_DEF
+	TOOLBOX_END_PLUGIN_DEF
 
 
 	extern "C"
 	{
-		DEFINE_TOOLBOX_PLUGIN_INFO( "OpenGL",
+		TOOLBOX_DEFINE_PLUGIN_INFO( "OpenGL",
 									"0.1",
 									"Renderer3D" )
 
-		DEFINE_TOOLBOX_PLUGIN_FACTORY( Renderer3D, GLRenderer )
+		TOOLBOX_DEFINE_PLUGIN_FACTORY( Renderer3D, GLRenderer )
 
 
 		// Optional plugin event functions

@@ -20,7 +20,7 @@ namespace Toolbox
 	//
 	// AppWindow plugin
 	//
-	DEFINE_TOOLBOX_PLUGIN_D( AppWindow, SDL2Window )
+	TOOLBOX_DEFINE_PLUGIN_D( AppWindow, SDL2Window )
 
 		typedef std::map< tAppWindowOption, tAppWindowOptionValue >	tAppWindowOptions;
 
@@ -188,13 +188,13 @@ namespace Toolbox
 
 		tAppWindowOptions	_WindowOptions;
 
-	END_TOOLBOX_PLUGIN_DEF
+	TOOLBOX_END_PLUGIN_DEF
 
 
 	//
 	// Renderer2D Plugin
 	//
-	DEFINE_TOOLBOX_PLUGIN( Renderer2D, SDL2Renderer )
+	TOOLBOX_DEFINE_PLUGIN( Renderer2D, SDL2Renderer )
 
 		virtual void BeginFrame()
 		{
@@ -226,17 +226,17 @@ namespace Toolbox
 			throw std::runtime_error( std::string(dbg_CurFunc) + ": Not implemented.  (Sorry!)" );
 		}
 
-	END_TOOLBOX_PLUGIN_DEF
+	TOOLBOX_END_PLUGIN_DEF
 
 
 	extern "C"
 	{
-		DEFINE_TOOLBOX_PLUGIN_INFO( "SDL2",
+		TOOLBOX_DEFINE_PLUGIN_INFO( "SDL2",
 									"0.1",
 									"AppWindow, Renderer2D" )
 
-		DEFINE_TOOLBOX_PLUGIN_FACTORY( AppWindow, SDL2Window )
-		DEFINE_TOOLBOX_PLUGIN_FACTORY( Renderer2D, SDL2Renderer )
+		TOOLBOX_DEFINE_PLUGIN_FACTORY( AppWindow, SDL2Window )
+		TOOLBOX_DEFINE_PLUGIN_FACTORY( Renderer2D, SDL2Renderer )
 
 		// Optional plugin event functions
 		// void onLoad();
