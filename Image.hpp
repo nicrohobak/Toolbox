@@ -26,8 +26,6 @@
 														//   same arguments.
  ****************************************************************************/
 
-#include <algorithm>
-
 #include <Toolbox/Plugin.hpp>
 
 
@@ -138,7 +136,7 @@ namespace Toolbox
 			}
 			else
 			{
-				std::string Extension( getExtFromFilename(fileName) );
+				std::string Extension( Plugin::GetExtFromFilename(fileName) );
 				auto Plugins = _PluginMgr.Plugins();
 
 				// If plugin is not provided, we search our plugins for the fileName's extension
@@ -241,24 +239,6 @@ namespace Toolbox
 		Image_Plugin::tColorChannels	_BitOrder;
 
 		std::string						_Data;				// The raw image data
-
-	protected:
-		std::string getExtFromFilename( const std::string &fileName ) const
-		{
-			constexpr const char *dbg_CurFunc = "Toolbox::Image::getExtFromFilename(const std::string &)";
-			std::string Ext("");
-
-			if ( fileName.empty() )
-				return Ext;
-
-			auto LastDot = fileName.find_last_of( '.' );
-			Ext = fileName.substr( ++LastDot );
-
-			if ( !Ext.empty() )
-				std::transform(Ext.begin(), Ext.end(), Ext.begin(), (int(*)(int))std::toupper);
-
-			return Ext;
-		}
 
 		friend class Toolbox::Image_Plugin;
 	};

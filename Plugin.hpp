@@ -56,6 +56,7 @@
 /****************************************************************************/
 /****************************************************************************/
 
+#include <algorithm>
 #include <iostream>
 #include <map>
 
@@ -161,6 +162,25 @@ namespace Toolbox
 		constexpr static char *Invalid = "!INVALID!";
 		typedef std::map< std::string, std::string >	tInterfaceMap;
 		typedef void (*tEventFunc)( void );
+
+	public:
+		static std::string GetExtFromFilename( const std::string &fileName )
+		{
+			constexpr const char *dbg_CurFunc = "Toolbox::Plugin::GetExtFromFilename(const std::string &)";
+
+			std::string Ext("");
+
+			if ( fileName.empty() )
+				return Ext;
+
+			auto LastDot = fileName.find_last_of( '.' );
+			Ext = fileName.substr( ++LastDot );
+
+			if ( !Ext.empty() )
+				std::transform( Ext.begin(), Ext.end(), Ext.begin(), (int(*)(int))std::toupper );
+
+			return Ext;
+		}
 
 	public:
 		Plugin( const std::string &fileName ):

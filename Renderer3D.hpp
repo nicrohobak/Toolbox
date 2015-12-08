@@ -97,7 +97,6 @@
 */
 
 
-#include <algorithm>
 #include <fstream>
 
 #include <Toolbox/Image.hpp>
@@ -288,25 +287,6 @@ namespace Toolbox
 
 	protected:
 		static PluginManager	_PluginMgr;
-
-	protected:
-		// TODO: Move this function into a proper common location (Plugin.hpp?)
-		std::string getExtFromFilename( const std::string &fileName ) const
-		{
-			constexpr const char *dbg_CurFunc = "Toolbox::3DModel::getExtFromFilename(const std::string &)";
-			std::string Ext("");
-
-			if ( fileName.empty() )
-				return Ext;
-
-			auto LastDot = fileName.find_last_of( '.' );
-			Ext = fileName.substr( ++LastDot );
-
-			if ( !Ext.empty() )
-				std::transform(Ext.begin(), Ext.end(), Ext.begin(), (int(*)(int))std::toupper);
-
-			return Ext;
-		}
 
 		friend class Toolbox::Model_Plugin;
 	};
