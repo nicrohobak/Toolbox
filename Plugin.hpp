@@ -71,7 +71,7 @@ namespace Toolbox
 	 */
 	// MUST be closed with TOOLBOX_END_PLUGIN_DEF!
 	#define TOOLBOX_DEFINE_PLUGIN_INTERFACE( tInterface, tVersion )			\
-		class tInterface													\
+		class tInterface : public std::enable_shared_from_this< tInterface >\
 		{																	\
 		public:																\
 			constexpr static const char *Name = #tInterface;				\
@@ -85,7 +85,7 @@ namespace Toolbox
 	// Same as above, but with no destructor automatically defined, the user
 	//   MUST provide one
 	#define TOOLBOX_DEFINE_PLUGIN_INTERFACE_D( tInterface, tVersion )		\
-		class tInterface													\
+		class tInterface : public std::enable_shared_from_this< tInterface >\
 		{																	\
 		public:																\
 			constexpr static const char *Name = #tInterface;				\
@@ -132,9 +132,9 @@ namespace Toolbox
 	// 			  provided by this plugin
 	//
 	#define TOOLBOX_DEFINE_PLUGIN_INFO( name, version, provides )			\
-		const char *_Name						= name;						\
-		const char *_Version					= version;					\
-		const char *_Provides					= provides;					\
+		const char *_Name		= name;										\
+		const char *_Version	= version;									\
+		const char *_Provides	= provides;
 
 
 	//
@@ -273,7 +273,7 @@ namespace Toolbox
 			}
 			catch ( std::exception &ex )
 			{
-				throw std::runtime_error( std::string("Plugin::Plugin(): '") + fileName + std::string("' is not a valid plugin.") );
+				throw std::runtime_error( std::string("Plugin::Plugin(): Invalid plugin: ") + ex.what() );
 			}
 
 			// Suppressing errors for an optional function
