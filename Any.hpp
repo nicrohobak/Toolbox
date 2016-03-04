@@ -9,9 +9,16 @@
 
 /*****************************************************************************
  * Example Program:
-    void Print( const Toolbox::Any &value )
+
+	#include <Toolbox/Any.hpp>
+
+	void Print( const Toolbox::Any &value )
 	{
-		std::cout << "Type: " << value.TypeName() << "  Value: " << value << std::endl;
+		std::cout << "Type: " << value.TypeName() << "\tValue: " << value << std::endl;
+
+		// For this demo, we happen to know that our pointer type is a std::string
+		if ( !value.TypeName().compare("Pointer") )
+			std::cout << "\t\tPointer contents: " << *(value.AsPtr< std::string >()) << std::endl;
 	}
 
 	int main( int argc, char *argv[] )
@@ -25,19 +32,23 @@
 
 			Test = false;
 			Print( Test );
-	
+
 			Test = (unsigned)12345;
 			Print( Test );
 
-			Test = 123.456;
+			Test = 987.654;
 			Print( Test );
 
-			std::cout << "\tAs Int: " << Test.AsInt() << std::endl;
+			std::cout << "\t\tSame value, as Int: " << Test.AsInt() << std::endl;
 
 			Test = "This is a test.";
 			Print( Test );
 
 			Test = std::string( "This is another test." );
+			Print( Test );
+
+			std::string PointerTest( "Pointer test!" );
+			Test.AssignPtr( &PointerTest );
 			Print( Test );
 
 			Test.Unassign();
@@ -78,6 +89,7 @@ namespace Toolbox
 			Any_Uint,
 			Any_Float,
 			Any_Str,
+			Any_Ptr,
 
 			Any_MAX,
 
@@ -213,9 +225,22 @@ namespace Toolbox
 					return std::string( Formatter.str() );
 				}
 
+				case Any_Ptr:
+				{
+					std::stringstream Formatter;
+					Formatter << _data.Ptr;
+					return std::string( Formatter.str() );
+				}
+
 				default:
 					return _str;
 			}
+		}
+
+		template <typename tPtr>
+		const tPtr *AsPtr() const
+		{
+			return reinterpret_cast< tPtr * >( _data.Ptr );
 		}
 
 		// Yay for templates, auto-type matching and the typing it saves!
@@ -271,11 +296,26 @@ namespace Toolbox
 			_data.Float = value;
 		}
 
+		void Assign( const char *str )
+		{
+			_type = Any_Str;
+			_data.Int = 0;
+			_str = str;
+		}
+
 		void Assign( const std::string &str )
 		{
 			_type = Any_Str;
 			_data.Int = 0;
 			_str = str;
+		}
+
+		template <typename tPtr>
+		void AssignPtr( tPtr ptr )
+		{
+			_type = Any_Ptr;
+			_str.clear();
+			_data.Ptr = reinterpret_cast< void * >( ptr );
 		}
 
 	protected:
@@ -287,6 +327,7 @@ namespace Toolbox
 			long			Int;
 			unsigned long	Uint;
 			double			Float;
+			void *			Ptr;
 		} _data;
 
 		std::string		_str;
@@ -300,7 +341,8 @@ namespace Toolbox
 		"Int",
 		"Uint",
 		"Float",
-		"String"
+		"String",
+		"Pointer"
 	};
 }
 
@@ -332,6 +374,10 @@ std::ostream &operator<<( std::ostream &out, const Toolbox::Any &value )
 
 		case Toolbox::Any::DataType::Any_Str:
 			out << value.AsStr();
+			break;
+
+		case Toolbox::Any::DataType::Any_Ptr:
+			out << value.AsPtr< void * >();
 			break;
 
 		case Toolbox::Any::DataType::Any_NULL:
