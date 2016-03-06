@@ -29,7 +29,7 @@ class EventHandlerObject : public Toolbox::Event::Listener
 public:
 	EventHandlerObject()
 	{
-		SetHandler( "Event2", std::bind(&EventHandlerObject::HandlerFunc, *this, std::placeholders::_1) );
+		SetEventHandler( "Event2", std::bind(&EventHandlerObject::HandlerFunc, *this, std::placeholders::_1) );
 	}
 
     void HandlerFunc( const Toolbox::Event::Data &data = Toolbox::Event::Data() )
@@ -187,7 +187,7 @@ namespace Toolbox
 			typedef std::map< Type, EventHandlerFunc >			HandlerFuncs;
 
 		public:
-			void SetHandler( const Type &type, EventHandlerFunc handler )
+			void SetEventHandler( const Type &type, EventHandlerFunc handler )
 			{
 				_Handlers[ type ] = handler;
 			}
