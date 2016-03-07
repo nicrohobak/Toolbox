@@ -12,10 +12,9 @@
  * Example Program:
 
 #include <Toolbox/Event.hpp>
-#include <Toolbox/Memory.hpp>
 
 
-void EventHandlerFunc( const Toolbox::Event::Data &data = Toolbox::Event::Data() )
+void EventHandlerFunc( TOOLBOX_EVENT_PARAMS )
 {
 	std::cout << "(EventHandlerFunc) - Handling \"Event1\"" << std::endl;
 
@@ -29,10 +28,10 @@ class EventHandlerObject : public Toolbox::Event::Listener
 public:
 	EventHandlerObject()
 	{
-		SetEventHandler( "Event2", std::bind(&EventHandlerObject::HandlerFunc, *this, std::placeholders::_1) );
+		SetEventHandler( "Event2", std::bind(&EventHandlerObject::HandlerFunc, *this, TOOLBOX_EVENT_BIND_PARAM_COUNT) );
 	}
 
-    void HandlerFunc( const Toolbox::Event::Data &data = Toolbox::Event::Data() )
+    void HandlerFunc( TOOLBOX_EVENT_PARAMS )
 	{
 		std::cout << "(EventHandlerObject::HandlerFunc) - Handling \"Event2\"" << std::endl;
 
@@ -99,6 +98,10 @@ namespace Toolbox
 {
 	namespace Event
 	{
+		#define TOOLBOX_EVENT_BIND_PARAM_COUNT	std::placeholders::_1
+		#define TOOLBOX_EVENT_PARAMS			const Toolbox::Event::Data &data = Toolbox::Event::Data()
+
+
 		typedef std::string	Type;
 
 
