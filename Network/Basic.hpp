@@ -12,6 +12,7 @@
 /*****************************************************************************
  * Example program:
 
+
 class CustomSocket : public Toolbox::Network::Socket
 {
 public:
@@ -51,20 +52,15 @@ public:
 				_Server->Stop();
 			}
 			else
-			{
-				Write( "Failed to shutdown the server!" );
-			}
+				throw std::runtime_error( "CustomSocket::onHandleLine(): Attempted server shutdown with invalid _Server pointer." );
 
 			return;
 		}
 
-		// Echo
-		Write( "\n\rServer) " );
-		Write( Line );
-		Write( "\n\r\n\r" );
-
-		// Prompt
-		Write( ") " );
+		*this << endl;									// Layout/Spacing
+		*this << "Server ) " << Line << endl << endl;	// Echo
+		*this << ") ";									// Prompt
+		Flush();										// Send
 	}
 
 	TOOLBOX_EVENT_HANDLER( onClose )
@@ -95,17 +91,17 @@ protected:
 		std::cout << "    Address: " << NewSocket << std::endl;
 
 		// Easier to include line terminator
-		const char *CRLF = NewSocket->CRLF;
+		const char *endl = NewSocket->endl;
 
 		// Use the << operator to add to the outgoing buffer (std::stringstream converts the stream to std::string)
-		*NewSocket << CRLF;
-		*NewSocket << "=======================================" << CRLF;
-		*NewSocket << "  Welcome to the Example Echo Server!" << CRLF << CRLF;
-		*NewSocket << "   (Any command typed will be echoed" << CRLF;
-		*NewSocket << "    back.)" << CRLF << CRLF;
-		*NewSocket << " (Type 'quit' to disconnect.)" << CRLF;
-		*NewSocket << " (Type 'shutdown' to stop the server.)" << CRLF;
-		*NewSocket << "=======================================" << CRLF << CRLF;
+		*NewSocket << endl;
+		*NewSocket << "=======================================" << endl;
+		*NewSocket << "  Welcome to the Example Echo Server!" << endl << endl;
+		*NewSocket << "   (Any command typed will be echoed" << endl;
+		*NewSocket << "    back.)" << endl << endl;
+		*NewSocket << " (Type 'quit' to disconnect.)" << endl;
+		*NewSocket << " (Type 'shutdown' to stop the server.)" << endl;
+		*NewSocket << "=======================================" << endl << endl;
 
 		// Send the outgoing buffer
 		NewSocket->Flush();
@@ -211,7 +207,7 @@ namespace Toolbox
 		public:
 			TOOLBOX_MEMORY_POINTERS_AND_LISTS( Socket )
 			constexpr static size_t BUFFER_SIZE = 1;
-			constexpr static char *CRLF = "\n\r";
+			constexpr static char *endl = "\n\r";
 
 		protected:
 			// Called for every incoming byte
@@ -291,6 +287,7 @@ namespace Toolbox
 										if ( !ec )
 										{
 											// onWrite
+											_SendBuf.clear();
 										}
 									} );
 			}
