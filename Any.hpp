@@ -124,6 +124,16 @@ namespace Toolbox
 			return _data.Bool;
 		}
 
+		char AsChar() const
+		{
+			return (char)AsLong();
+		}
+
+		short int AsShort() const
+		{
+			return (short int)AsLong();
+		}
+
 		long AsInt() const
 		{
 			return AsLong();
@@ -143,6 +153,16 @@ namespace Toolbox
 					return _data.Int;
 			}
 
+		}
+
+		unsigned char AsUchar() const
+		{
+			return (unsigned char)AsUlong();
+		}
+
+		unsigned short int AsUShort() const
+		{
+			return (short int)AsUlong();
 		}
 
 		unsigned long AsUint() const
@@ -238,7 +258,7 @@ namespace Toolbox
 		}
 
 		template <typename tPtr>
-		const tPtr *AsPtr() const
+		tPtr *AsPtr() const
 		{
 			return reinterpret_cast< tPtr * >( _data.Ptr );
 		}
