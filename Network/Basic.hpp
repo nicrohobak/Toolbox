@@ -12,8 +12,7 @@
 /*****************************************************************************
  * Example program:
 
-
- class CustomSocket : public Toolbox::Network::Socket
+class CustomSocket : public Toolbox::Network::Socket
 {
 public:
 	TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR( CustomSocket )
@@ -95,14 +94,23 @@ protected:
 		std::cout << "CustomServer::onNewConnection()" << std::endl;
 		std::cout << "    Address: " << NewSocket << std::endl;
 
-		NewSocket->Write( "\n\r=======================================\n\r" );
-		NewSocket->Write( "  Welcome to the Example Echo Server!\n\r\n\r" );
-		NewSocket->Write( "   (Any command typed will be echoed\n\r" );
-		NewSocket->Write( "    back.)\n\r" );
-		NewSocket->Write( " (Type 'quit' to disconnect.)\n\r" );
-		NewSocket->Write( " (Type 'shutdown' to stop the server.)\n\r" );
-		NewSocket->Write( "=======================================\n\r\n\r" );
+		// Easier to include line terminator
+		const char *CRLF = NewSocket->CRLF;
 
+		// Use the << operator to add to the outgoing buffer (std::stringstream converts the stream to std::string)
+		*NewSocket << CRLF;
+		*NewSocket << "=======================================" << CRLF;
+		*NewSocket << "  Welcome to the Example Echo Server!" << CRLF << CRLF;
+		*NewSocket << "   (Any command typed will be echoed" << CRLF;
+		*NewSocket << "    back.)" << CRLF << CRLF;
+		*NewSocket << " (Type 'quit' to disconnect.)" << CRLF;
+		*NewSocket << " (Type 'shutdown' to stop the server.)" << CRLF;
+		*NewSocket << "=======================================" << CRLF << CRLF;
+
+		// Send the outgoing buffer
+		NewSocket->Flush();
+
+		// Or write to the socket immediately with Write()
 		// Prompt
 		NewSocket->Write( ") " );
 	}
@@ -135,6 +143,7 @@ int main( int argc, char *argv[] )
 /****************************************************************************/
 /****************************************************************************/
 
+#include <sstream>
 
 #include <asio.hpp>
 
@@ -202,6 +211,7 @@ namespace Toolbox
 		public:
 			TOOLBOX_MEMORY_POINTERS_AND_LISTS( Socket )
 			constexpr static size_t BUFFER_SIZE = 1;
+			constexpr static char *CRLF = "\n\r";
 
 		protected:
 			// Called for every incoming byte
@@ -255,6 +265,9 @@ namespace Toolbox
 			{
 			}
 
+			void Close();
+
+			// Sends to the client immediately
 			void Write( const std::string &msg )
 			{
 				asio::async_write( *_Socket,
@@ -268,7 +281,101 @@ namespace Toolbox
 									} );
 			}
 
-			void Close();
+			// Flushes the outgoing buffer, sending it to the client
+			void Flush()
+			{
+				asio::async_write( *_Socket,
+									asio::buffer(_SendBuf.c_str(), _SendBuf.length()),
+									[this]( std::error_code ec, size_t length )
+									{
+										if ( !ec )
+										{
+											// onWrite
+										}
+									} );
+			}
+
+			//
+			// Stream into the outgoing buffer
+			//
+			Socket &operator<<( bool val )
+			{
+				return addToStream<>( val );
+			}
+
+			Socket &operator<<( char val )
+			{
+				return addToStream<>( val );
+			}
+
+			Socket &operator<<( unsigned char val )
+			{
+				return addToStream<>( val );
+			}
+
+			Socket &operator<<( short val )
+			{
+				return addToStream<>( val );
+			}
+
+			Socket &operator<<( unsigned short val )
+			{
+				return addToStream<>( val );
+			}
+
+			Socket &operator<<( int val )
+			{
+				return addToStream<>( val );
+			}
+
+			Socket &operator<<( unsigned int val )
+			{
+				return addToStream<>( val );
+			}
+
+			Socket &operator<<( long val )
+			{
+				return addToStream<>( val );
+			}
+
+			Socket &operator<<( unsigned long val )
+			{
+				return addToStream<>( val );
+			}
+
+			Socket &operator<<( float val )
+			{
+				return addToStream<>( val );
+			}
+
+			Socket &operator<<( double val )
+			{
+				return addToStream<>( val );
+			}
+
+			Socket &operator<<( char *val )
+			{
+				_SendBuf.append( std::string(val) );
+				return *this;
+			}
+
+			Socket &operator<<( const char *val )
+			{
+				_SendBuf.append( std::string(val) );
+				return *this;
+			}
+
+			Socket &operator<<( const std::string &val )
+			{
+				_SendBuf.append( val );
+				return *this;
+			}
+
+			Socket &operator<<( const std::stringstream &val )
+			{
+				_SendBuf.append( val.str() );
+				return *this;
+			}
 
 		protected:
 			void resetCharBuf()
@@ -278,10 +385,20 @@ namespace Toolbox
 
 			void doRead();
 
+			template <typename tType>
+			Socket &addToStream( const tType &val )
+			{
+				std::stringstream Buf("");
+				Buf << val;
+				_SendBuf.append( Buf.str() );
+				return *this;
+			}
+
 		protected:
 			CoreSocket_Ptr	_Socket;
-			unsigned char	_CharBuf[ BUFFER_SIZE + 1 ];
-			std::string		_LineBuf;
+			unsigned char	_CharBuf[ BUFFER_SIZE + 1 ];	// Incoming buffer
+			std::string		_LineBuf;						// Incoming buffer
+			std::string		_SendBuf;						// Outgoing buffer
 
 			Server *		_Server;
 
