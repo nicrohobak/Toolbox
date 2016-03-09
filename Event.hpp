@@ -14,11 +14,12 @@
 #include <Toolbox/Event.hpp>
 
 
-void EventHandlerFunc( TOOLBOX_EVENT_PARAMS )
+// Event handlers get an Event::Data parameter called 'eventData'
+TOOLBOX_EVENT_HANDLER( EventHandlerFunc )
 {
 	std::cout << "(EventHandlerFunc) - Handling \"Event1\"" << std::endl;
 
-	for ( auto d = data.begin(), d_end = data.end(); d != d_end; ++d )
+	for ( auto d = eventData.begin(), d_end = eventData.end(); d != d_end; ++d )
 		std::cout << "    " << d->first << " : " << d->second << std::endl;
 }
 
@@ -28,14 +29,15 @@ class EventHandlerObject : public Toolbox::Event::Listener
 public:
 	EventHandlerObject()
 	{
-		SetEventHandler( "Event2", std::bind(&EventHandlerObject::HandlerFunc, *this, TOOLBOX_EVENT_BIND_PARAM_COUNT) );
+		TOOLBOX_EVENT_SET_MEMBER_HANDLER( "Event2", &EventHandlerObject::HandlerFunc )
 	}
 
-    void HandlerFunc( TOOLBOX_EVENT_PARAMS )
+	// Event handlers get an Event::Data parameter called 'eventData'
+	TOOLBOX_EVENT_HANDLER( HandlerFunc )
 	{
 		std::cout << "(EventHandlerObject::HandlerFunc) - Handling \"Event2\"" << std::endl;
 
-		for ( auto d = data.begin(), d_end = data.end(); d != d_end; ++d )
+		for ( auto d = eventData.begin(), d_end = eventData.end(); d != d_end; ++d )
 			std::cout << "    " << d->first << " : " << d->second << std::endl;
 	}
 };
@@ -98,8 +100,16 @@ namespace Toolbox
 {
 	namespace Event
 	{
-		#define TOOLBOX_EVENT_BIND_PARAM_COUNT	std::placeholders::_1
-		#define TOOLBOX_EVENT_PARAMS			const Toolbox::Event::Data &data = Toolbox::Event::Data()
+		#define TOOLBOX_EVENT_BIND_PLACEHOLDERS	std::placeholders::_1
+		#define TOOLBOX_EVENT_MEMBER_BIND_PARAM	this, TOOLBOX_EVENT_BIND_PLACEHOLDERS
+
+		#define TOOLBOX_EVENT_SET_MEMBER_HANDLER( tEvent, Func )						\
+				this->SetEventHandler( tEvent, std::bind(Func, TOOLBOX_EVENT_MEMBER_BIND_PARAM) );
+
+		#define TOOLBOX_EVENT_PARAMS			const Toolbox::Event::Data &eventData
+
+		#define TOOLBOX_EVENT_HANDLER( tEventFunc )										\
+				void tEventFunc( TOOLBOX_EVENT_PARAMS )
 
 
 		typedef std::string	Type;
@@ -119,14 +129,6 @@ namespace Toolbox
 			typedef DataType::const_reverse_iterator	const_reverse_iterator;
 
 		public:
-			Data()
-			{
-			}
-
-			virtual ~Data()
-			{
-			}
-
 			DataType::iterator begin()
 			{
 				return _Data.begin();
@@ -187,10 +189,10 @@ namespace Toolbox
 		public:
 			TOOLBOX_MEMORY_POINTERS_AND_LISTS( Listener )
 			typedef std::function< void( const Data &data ) >	EventHandlerFunc;
-			typedef std::map< Type, EventHandlerFunc >			HandlerFuncs;
+			typedef std::map< Type, EventHandlerFunc >	HandlerFuncs;
 
 		public:
-			void SetEventHandler( const Type &type, EventHandlerFunc handler )
+			void SetEventHandler( const Type &type, const EventHandlerFunc &handler )
 			{
 				_Handlers[ type ] = handler;
 			}
