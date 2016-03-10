@@ -36,6 +36,8 @@
 			Test = (unsigned)12345;
 			Print( Test );
 
+			std::cout << "\t\tSame value, as Float: " << Test.AsFloat() << std::endl;
+
 			Test = 987.654;
 			Print( Test );
 
@@ -133,52 +135,52 @@ namespace Toolbox
 
 		char AsChar() const
 		{
-			return _data.Char;
+			return (char)castLong();
 		}
 
 		unsigned char AsUChar() const
 		{
-			return _data.UChar;
+			return (unsigned char)castLong();
 		}
 
 		short int AsShort() const
 		{
-			return _data.Short;
+			return (short)castLong();
 		}
 
 		unsigned short int AsUShort() const
 		{
-			return _data.UShort;
+			return (unsigned short)castLong();
 		}
 
 		int AsInt() const
 		{
-			return _data.Int;
+			return (int)castLong();
 		}
 
 		unsigned int AsUInt() const
 		{
-			return _data.UInt;
+			return (unsigned int)castLong();
 		}
 
 		long AsLong() const
 		{
-			return _data.Long;
+			return castLong();
 		}
 
 		unsigned long AsULong() const
 		{
-			return _data.ULong;
+			return (unsigned long)castLong();
 		}
 
 		float AsFloat() const
 		{
-			return _data.Float;
+			return (float)castDouble();
 		}
 
 		double AsDouble() const
 		{
-			return _data.Double;
+			return (float)castDouble();;
 		}
 
 		const std::string &AsStr() const
@@ -200,7 +202,7 @@ namespace Toolbox
 				case Any_UChar:
 				{
 					std::string CharStr("");
-					CharStr.push_back( _data.Char );
+					CharStr.push_back( AsChar() );
 					return CharStr;
 				}
 
@@ -387,8 +389,44 @@ namespace Toolbox
 		}
 
 	protected:
+		// Retrieval assistance
+		long castLong() const
+		{
+			switch ( _type )
+			{
+				case Any_Float:
+				case Any_Double:
+					return (long)_data.Double;
+
+				default:
+					return _data.Long;
+			}
+		}
+
+		double castDouble() const
+		{
+			switch ( _type )
+			{
+				case Any_Bool:
+				case Any_Char:
+				case Any_UChar:
+				case Any_Short:
+				case Any_UShort:
+				case Any_Int:
+				case Any_UInt:
+				case Any_Long:
+				case Any_ULong:
+					return (double)_data.Long;
+
+				default:
+					return _data.Double;
+			}
+		}
+
+	protected:
 		DataType		_type;
 
+		// This really doesn't need all of these types in it, but since it doesn't really hurt...
 		union
 		{
 			bool			Bool;
