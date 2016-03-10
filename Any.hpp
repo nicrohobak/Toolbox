@@ -85,9 +85,16 @@ namespace Toolbox
 			Any_NULL,
 
 			Any_Bool,
+			Any_Char,
+			Any_UChar,
+			Any_Short,
+			Any_UShort,
 			Any_Int,
-			Any_Uint,
+			Any_UInt,
+			Any_Long,
+			Any_ULong,
 			Any_Float,
+			Any_Double,
 			Any_Str,
 			Any_Ptr,
 
@@ -126,87 +133,52 @@ namespace Toolbox
 
 		char AsChar() const
 		{
-			return (char)AsLong();
+			return _data.Char;
+		}
+
+		unsigned char AsUChar() const
+		{
+			return _data.UChar;
 		}
 
 		short int AsShort() const
 		{
-			return (short int)AsLong();
-		}
-
-		long AsInt() const
-		{
-			return AsLong();
-		}
-
-		long AsLong() const
-		{
-			switch ( _type )
-			{
-				case Any_NULL:
-					return 0;
-
-				case Any_Float:
-					return (long)_data.Float;
-
-				default:
-					return _data.Int;
-			}
-
-		}
-
-		unsigned char AsUchar() const
-		{
-			return (unsigned char)AsUlong();
+			return _data.Short;
 		}
 
 		unsigned short int AsUShort() const
 		{
-			return (short int)AsUlong();
+			return _data.UShort;
 		}
 
-		unsigned long AsUint() const
+		int AsInt() const
 		{
-			return AsUlong();
+			return _data.Int;
 		}
 
-		unsigned long AsUlong() const
+		unsigned int AsUInt() const
 		{
-			switch ( _type )
-			{
-				case Any_NULL:
-					return 0;
-
-				case Any_Float:
-					return (unsigned long)_data.Float;
-
-				default:
-					return _data.Uint;
-			}
+			return _data.UInt;
 		}
 
-		double AsFloat() const
+		long AsLong() const
 		{
-			return AsDouble();
+			return _data.Long;
+		}
+
+		unsigned long AsULong() const
+		{
+			return _data.ULong;
+		}
+
+		float AsFloat() const
+		{
+			return _data.Float;
 		}
 
 		double AsDouble() const
 		{
-			switch ( _type )
-			{
-				case Any_NULL:
-					return 0;
-
-				case Any_Int:
-					return (double)_data.Int;
-
-				case Any_Uint:
-					return (double)_data.Uint;
-
-				default:
-					return _data.Float;
-			}
-
+			return _data.Double;
 		}
 
 		const std::string &AsStr() const
@@ -224,24 +196,61 @@ namespace Toolbox
 						return std::string( "false" );
 				}
 
-				case Any_Int:
+				case Any_Char:
+				case Any_UChar:
+				{
+					std::string CharStr("");
+					CharStr.push_back( _data.Char );
+					return CharStr;
+				}
+
+				case Any_Short:
 				{
 					std::stringstream Formatter;
-					Formatter << _data.Int;
+					Formatter << AsShort();
 					return std::string( Formatter.str() );
 				}
 
-				case Any_Uint:
+				case Any_UShort:
 				{
 					std::stringstream Formatter;
-					Formatter << _data.Uint;
+					Formatter << AsUShort();
+					return std::string( Formatter.str() );
+				}
+
+				case Any_Int:
+				{
+					std::stringstream Formatter;
+					Formatter << AsInt();
+					return std::string( Formatter.str() );
+				}
+
+				case Any_UInt:
+				{
+					std::stringstream Formatter;
+					Formatter << AsUInt();
+					return std::string( Formatter.str() );
+				}
+
+				case Any_Long:
+				{
+					std::stringstream Formatter;
+					Formatter << AsLong();
+					return std::string( Formatter.str() );
+				}
+
+				case Any_ULong:
+				{
+					std::stringstream Formatter;
+					Formatter << AsULong();
 					return std::string( Formatter.str() );
 				}
 
 				case Any_Float:
+				case Any_Double:
 				{
 					std::stringstream Formatter;
-					Formatter << _data.Float;
+					Formatter << _data.Double;
 					return std::string( Formatter.str() );
 				}
 
@@ -274,7 +283,7 @@ namespace Toolbox
 		void Unassign()
 		{
 			_type = Any_NULL;
-			_data.Int = 0;
+			_data.Long = 0;
 			_str.clear();
 		}
 
@@ -285,12 +294,35 @@ namespace Toolbox
 			_data.Bool = value;
 		}
 
-		void Assign( const int &value )
+		void Assign( const char &value )
 		{
-			Assign( (long)value );
+			_type = Any_Char;
+			_str.clear();
+			_data.Char = value;
 		}
 
-		void Assign( const long &value )
+		void Assign( const unsigned char &value )
+		{
+			_type = Any_UChar;
+			_str.clear();
+			_data.UChar = value;
+		}
+
+		void Assign( const short &value )
+		{
+			_type = Any_Short;
+			_str.clear();
+			_data.Short = value;
+		}
+
+		void Assign( const unsigned short &value )
+		{
+			_type = Any_UShort;
+			_str.clear();
+			_data.UShort = value;
+		}
+
+		void Assign( const int &value )
 		{
 			_type = Any_Int;
 			_str.clear();
@@ -299,27 +331,43 @@ namespace Toolbox
 
 		void Assign( const unsigned int &value )
 		{
-			Assign( (unsigned long)value );
+			_type = Any_UInt;
+			_str.clear();
+			_data.UInt = value;
+		}
+
+		void Assign( const long &value )
+		{
+			_type = Any_Long;
+			_str.clear();
+			_data.Long = value;
 		}
 
 		void Assign( const unsigned long &value )
 		{
-			_type = Any_Uint;
+			_type = Any_ULong;
 			_str.clear();
-			_data.Uint = value;
+			_data.ULong = value;
 		}
 
-		void Assign( const double &value )
+		void Assign( const float &value )
 		{
 			_type = Any_Float;
 			_str.clear();
 			_data.Float = value;
 		}
 
+		void Assign( const double &value )
+		{
+			_type = Any_Double;
+			_str.clear();
+			_data.Double = value;
+		}
+
 		void Assign( const char *str )
 		{
 			_type = Any_Str;
-			_data.Int = 0;
+			_data.Long = 0;
 			_str = str;
 		}
 
@@ -344,9 +392,16 @@ namespace Toolbox
 		union
 		{
 			bool			Bool;
-			long			Int;
-			unsigned long	Uint;
-			double			Float;
+			char			Char;
+			unsigned char	UChar;
+			short			Short;
+			unsigned short	UShort;
+			int				Int;
+			unsigned int	UInt;
+			long			Long;
+			unsigned long	ULong;
+			float			Float;
+			double			Double;
 			void *			Ptr;
 		} _data;
 
@@ -358,9 +413,16 @@ namespace Toolbox
 	{
 		"NULL",
 		"Bool",
+		"Char",
+		"UChar",
+		"Short",
+		"UShort",
 		"Int",
-		"Uint",
+		"UInt",
+		"Long",
+		"ULong",
 		"Float",
+		"Double",
 		"String",
 		"Pointer"
 	};
@@ -380,16 +442,44 @@ std::ostream &operator<<( std::ostream &out, const Toolbox::Any &value )
 			break;
 		}
 
+		case Toolbox::Any::DataType::Any_Char:
+			out << value.AsChar();
+			break;
+
+		case Toolbox::Any::DataType::Any_UChar:
+			out << value.AsUChar();
+			break;
+
+		case Toolbox::Any::DataType::Any_Short:
+			out << value.AsShort();
+			break;
+
+		case Toolbox::Any::DataType::Any_UShort:
+			out << value.AsUShort();
+			break;
+
 		case Toolbox::Any::DataType::Any_Int:
 			out << value.AsInt();
 			break;
 
-		case Toolbox::Any::DataType::Any_Uint:
-			out << value.AsUint();
+		case Toolbox::Any::DataType::Any_UInt:
+			out << value.AsUInt();
+			break;
+
+		case Toolbox::Any::DataType::Any_Long:
+			out << value.AsLong();
+			break;
+
+		case Toolbox::Any::DataType::Any_ULong:
+			out << value.AsULong();
 			break;
 
 		case Toolbox::Any::DataType::Any_Float:
 			out << value.AsFloat();
+			break;
+
+		case Toolbox::Any::DataType::Any_Double:
+			out << value.AsDouble();
 			break;
 
 		case Toolbox::Any::DataType::Any_Str:
