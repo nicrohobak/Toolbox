@@ -18,9 +18,38 @@ class CustomSocket : public Toolbox::Network::Socket
 public:
 	TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR( CustomSocket )
 	{
+		TOOLBOX_EVENT_SET_MEMBER_HANDLER( "onConnect",		&CustomSocket::onConnect )
+		TOOLBOX_EVENT_SET_MEMBER_HANDLER( "onClose",		&CustomSocket::onClose )
 		TOOLBOX_EVENT_SET_MEMBER_HANDLER( "onHandleChar",	&CustomSocket::onHandleChar )
 		TOOLBOX_EVENT_SET_MEMBER_HANDLER( "onHandleLine",	&CustomSocket::onHandleLine )
-		TOOLBOX_EVENT_SET_MEMBER_HANDLER( "onClose",		&CustomSocket::onClose )
+	}
+
+	TOOLBOX_EVENT_HANDLER( onConnect )
+	{
+		std::cout << this << " -- CustomSocket::onConnect()" <<  std::endl;
+
+		// Use the << operator to add to the outgoing buffer (std::stringstream converts the stream to std::string)
+		*this << endl;
+		*this << "=======================================" << endl;
+		*this << "  Welcome to the Example Echo Server!" << endl << endl;
+		*this << "   (Any command typed will be echoed" << endl;
+		*this << "    back.)" << endl << endl;
+		*this << " (Type 'quit' to disconnect.)" << endl;
+		*this << " (Type 'shutdown' to stop the server.)" << endl;
+		*this << "=======================================" << endl << endl;
+
+		// Send the outgoing buffer
+		this->Flush();
+
+		// Or write to the socket immediately with Write()
+		// Prompt
+		this->Write( ") " );
+	}
+
+	TOOLBOX_EVENT_HANDLER( onClose )
+	{
+		std::cout << this << " -- CustomSocket::onClose()" <<  std::endl;
+		Write( "\n\rServer) Bye bye!\n\r\n\r" );
 	}
 
 	TOOLBOX_EVENT_HANDLER( onHandleChar )
@@ -47,7 +76,15 @@ public:
 				std::cout << this << " -- CustomSocket::onHandleLine(): Shutdown command received!" <<  std::endl;
 
 				for ( auto s = _Server->begin(), s_end = _Server->end(); s != s_end; ++s )
-					(*s)->Write( "\n\rThe server is shutting down...goodbye!\n\r\n\r" );
+				{
+					// Give an extra newline to the ones who didn't dispatch the command
+					if ( s->get() != this )
+						*s->get() << endl;
+
+					*s->get() << endl;
+				    *s->get() << "The server is shutting down...goodbye!" << endl << endl;
+					(*s)->Flush();
+				}
 
 				_Server->Stop();
 			}
@@ -62,12 +99,6 @@ public:
 		*this << ") ";									// Prompt
 		Flush();										// Send
 	}
-
-	TOOLBOX_EVENT_HANDLER( onClose )
-	{
-		std::cout << this << " -- CustomSocket::onClose()" <<  std::endl;
-		Write( "\n\rServer) Bye bye!\n\r\n\r" );
-	}
 };
 
 
@@ -77,39 +108,10 @@ public:
 	CustomServer( short int port = 9876 ):
 		Toolbox::Network::Server( port )
 	{
-		TOOLBOX_EVENT_SET_MEMBER_HANDLER( "onNewConnection",	&CustomServer::onNewConnection )
 	}
 
 protected:
 	TOOLBOX_NETWORK_SERVER_CREATE_SOCKET( CustomSocket )
-
-	TOOLBOX_EVENT_HANDLER( onNewConnection )
-	{
-		CustomSocket *NewSocket = eventData["socket"].AsPtr< CustomSocket >();
-
-		std::cout << "CustomServer::onNewConnection()" << std::endl;
-		std::cout << "    Address: " << NewSocket << std::endl;
-
-		// Easier to include line terminator
-		const char *endl = NewSocket->endl;
-
-		// Use the << operator to add to the outgoing buffer (std::stringstream converts the stream to std::string)
-		*NewSocket << endl;
-		*NewSocket << "=======================================" << endl;
-		*NewSocket << "  Welcome to the Example Echo Server!" << endl << endl;
-		*NewSocket << "   (Any command typed will be echoed" << endl;
-		*NewSocket << "    back.)" << endl << endl;
-		*NewSocket << " (Type 'quit' to disconnect.)" << endl;
-		*NewSocket << " (Type 'shutdown' to stop the server.)" << endl;
-		*NewSocket << "=======================================" << endl << endl;
-
-		// Send the outgoing buffer
-		NewSocket->Flush();
-
-		// Or write to the socket immediately with Write()
-		// Prompt
-		NewSocket->Write( ") " );
-	}
 };
 
 
@@ -191,15 +193,18 @@ namespace Toolbox
 		class Server;
 
 
+		//
 		// Locally emits (but doesn't handle) the following events:
 		//
-		// - onHandleChar	- Called for each byte (char) received
-		// 					  ["input"]	- The input byte received (as int)
-		//
-		// - onHandleLine	- Called each time we receive a line terminator [\n,\r,\0,\003,\004] AND our line buffer is not empty
-		// 					  ["input"]	- The input line received, as std::string
+		// - onConnect		- Called when the socket is first connected
 		//
 		// - onClose		- Called when the socket is closed, prior to disconnecting (Write() is still valid here)
+		//
+		// - onHandleChar	- Called for each byte (char) received
+		// 					  ["input"]	- (char) The input byte received
+		//
+		// - onHandleLine	- Called each time we receive a line terminator [\n,\r,\0,\003,\004] AND our line buffer is not empty
+		// 					  ["input"]	- (std::string *) The input line received
 		//
 		class Socket : public std::enable_shared_from_this< Socket >,
 					   public Event::Listener
@@ -403,14 +408,7 @@ namespace Toolbox
 		};
 
 
-		//
-		// Should aways be created as a Server::Ptr so children sockets can maintain weak pointers to their parent server
-		//
-		// Locally emits (but doesn't handle) the following events:
-		// - onNewConnection	-- Called upon each new connection
-		// 						   ["socket"]	- Pointer to newly created socket
-		class Server : public std::enable_shared_from_this< Server >,
-					   public Event::Listener
+		class Server : public std::enable_shared_from_this< Server >
 		{
 		public:
 			TOOLBOX_MEMORY_POINTERS_AND_LISTS( Server )
@@ -572,10 +570,7 @@ namespace Toolbox
 												Socket::Ptr NewSocket = this->createSocket();
 												_Sockets.push_back( NewSocket );
 
-												Event::Data EventData;
-												EventData["socket"].AssignPtr( NewSocket.get() );		// Use AssignPtr or you may get bool!
-												this->HandleEvent( "onNewConnection", EventData );
-
+												NewSocket->HandleEvent( "onConnect" );
 												NewSocket->doRead();
 
 												_NewSocket = std::make_shared< CoreSocket >( *_IOService );
