@@ -13,16 +13,38 @@
  * Example program:
 
 
+#define SIMPLE_CONSTRUCTOR_EXAMPLE	1
+
+
 class CustomSocket : public Toolbox::Network::Socket
 {
 public:
-	TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR( CustomSocket )
-	{
-		TOOLBOX_EVENT_SET_MEMBER_HANDLER( "onConnect",		&CustomSocket::onConnect )
-		TOOLBOX_EVENT_SET_MEMBER_HANDLER( "onClose",		&CustomSocket::onClose )
-		TOOLBOX_EVENT_SET_MEMBER_HANDLER( "onHandleChar",	&CustomSocket::onHandleChar )
-		TOOLBOX_EVENT_SET_MEMBER_HANDLER( "onHandleLine",	&CustomSocket::onHandleLine )
-	}
+	#if SIMPLE_CONSTRUCTOR_EXAMPLE
+
+		TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR( CustomSocket )
+		{
+			TOOLBOX_EVENT_SET_MEMBER_HANDLER( "onConnect",		&CustomSocket::onConnect )
+			TOOLBOX_EVENT_SET_MEMBER_HANDLER( "onClose",		&CustomSocket::onClose )
+			TOOLBOX_EVENT_SET_MEMBER_HANDLER( "onHandleChar",	&CustomSocket::onHandleChar )
+			TOOLBOX_EVENT_SET_MEMBER_HANDLER( "onHandleLine",	&CustomSocket::onHandleLine )
+		}
+
+	#else // COMPLEX_CONSTRUCTOR_EXAMPLE
+
+		// Alternate constructor definition style, if we have other member variables to initialize
+		TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_START_INIT( CustomSocket )
+			// myVar( initialValue ),
+			// myOtherVar( 0 ),
+			// ...
+		TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_END_INIT
+		{
+			TOOLBOX_EVENT_SET_MEMBER_HANDLER( "onConnect",		&CustomSocket::onConnect )
+			TOOLBOX_EVENT_SET_MEMBER_HANDLER( "onClose",		&CustomSocket::onClose )
+			TOOLBOX_EVENT_SET_MEMBER_HANDLER( "onHandleChar",	&CustomSocket::onHandleChar )
+			TOOLBOX_EVENT_SET_MEMBER_HANDLER( "onHandleLine",	&CustomSocket::onHandleLine )
+		}
+
+	#endif // SIMPLE_CONSTRUCTOR_EXAMPLE
 
 	TOOLBOX_EVENT_HANDLER( onConnect )
 	{
@@ -168,10 +190,20 @@ namespace Toolbox
 		#define TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_PARAMS	Toolbox::Network::Server &server, Toolbox::Network::CoreSocket_Ptr socket
 		#define TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_ARGS		server, socket
 
-		// Constructor definition for custom Toolbox::Network::Socket classes
-		#define TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR( tCustomSocket )						\
-				tCustomSocket( TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_PARAMS ):				\
+
+		// Advanced constructor definition for custom Toolbox::Network::Socket classes
+		// - Allows for member initializations
+		#define TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_START_INIT( tCustomSocket )			\
+				tCustomSocket( TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_PARAMS ):
+
+		#define TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_END_INIT								\
 					Toolbox::Network::Socket( TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_ARGS )
+
+		// Simple constructor definition for custom Toolbox::Network::Socket classes
+		#define TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR( tCustomSocket )						\
+				TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_START_INIT( tCustomSocket )			\
+				TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_END_INIT
+		
 
 		// Constructor definition for custom Toolbox::Network::Server classes
 		#define TOOLBOX_NETWORK_SERVER_CONSTRUCTOR_PARAMS		short int port = Toolbox::Network::DEFAULT_PORT
