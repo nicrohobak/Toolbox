@@ -19,6 +19,8 @@
 class CustomSocket : public Toolbox::Network::Socket
 {
 public:
+	typedef Toolbox::Network::Socket		tParent;		// Requirement of TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR
+
 	#if SIMPLE_CONSTRUCTOR_EXAMPLE
 
 		TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR( CustomSocket )
@@ -192,12 +194,14 @@ namespace Toolbox
 
 
 		// Advanced constructor definition for custom Toolbox::Network::Socket classes
+		// - IMPORTANT: Requires a tParent typedef in the class!
+		//              typedef ParentClass tParent;
 		// - Allows for member initializations
 		#define TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_START_INIT( tCustomSocket )			\
 				tCustomSocket( TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_PARAMS ):
 
 		#define TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_END_INIT								\
-					Toolbox::Network::Socket( TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_ARGS )
+					tParent( TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_ARGS )
 
 		// Simple constructor definition for custom Toolbox::Network::Socket classes
 		#define TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR( tCustomSocket )						\
@@ -332,6 +336,11 @@ namespace Toolbox
 			//
 			// Stream into the outgoing buffer
 			//
+			Socket &operator<<( void *val )
+			{
+				return addToStream<>( val );
+			}
+
 			Socket &operator<<( bool val )
 			{
 				return addToStream<>( val );
