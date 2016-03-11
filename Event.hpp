@@ -191,18 +191,69 @@ namespace Toolbox
 			typedef std::function< void( const Data &data ) >	EventHandlerFunc;
 			typedef std::map< Type, EventHandlerFunc >	HandlerFuncs;
 
+			typedef HandlerFuncs::iterator					iterator;
+			typedef HandlerFuncs::const_iterator			const_iterator;
+			typedef HandlerFuncs::reverse_iterator			reverse_iterator;
+			typedef HandlerFuncs::const_reverse_iterator	const_reverse_iterator;
+
 		public:
 			void SetEventHandler( const Type &type, const EventHandlerFunc &handler )
 			{
 				_Handlers[ type ] = handler;
 			}
 
-			void HandleEvent( const Type &type, const Data &data = Data() )
+			// Returns true if the event was handled
+			bool HandleEvent( const Type &type, const Data &data = Data() )
 			{
 				auto HandlerFunc = _Handlers.find( type );
 
 				if ( HandlerFunc != _Handlers.end() )
+				{
 					HandlerFunc->second( data );
+					return true;
+				}
+
+				return false;
+			}
+
+			iterator begin()
+			{
+				return _Handlers.begin();
+			}
+
+			iterator end()
+			{
+				return _Handlers.end();
+			}
+
+			const_iterator begin() const
+			{
+				return _Handlers.begin();
+			}
+
+			const_iterator end() const
+			{
+				return _Handlers.end();
+			}
+
+			reverse_iterator rbegin()
+			{
+				return _Handlers.rbegin();
+			}
+
+			reverse_iterator rend()
+			{
+				return _Handlers.rend();
+			}
+
+			const_reverse_iterator rbegin() const
+			{
+				return _Handlers.rbegin();
+			}
+
+			const_reverse_iterator rend() const
+			{
+				return _Handlers.rend();
 			}
 
 		protected:
