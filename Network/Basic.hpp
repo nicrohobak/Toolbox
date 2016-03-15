@@ -302,10 +302,10 @@ namespace Toolbox
 			{
 			}
 
-			void Close();
+			virtual void Close();
 
 			// Sends to the client immediately
-			void Write( const std::string &msg )
+			virtual void Write( const std::string &msg )
 			{
 				asio::async_write( *_Socket,
 									asio::buffer(msg.c_str(), msg.length()),
@@ -319,8 +319,11 @@ namespace Toolbox
 			}
 
 			// Flushes the outgoing buffer, sending it to the client
-			void Flush()
+			virtual void Flush()
 			{
+				if ( _SendBuf.empty() )
+					return;
+
 				asio::async_write( *_Socket,
 									asio::buffer(_SendBuf.c_str(), _SendBuf.length()),
 									[this]( std::error_code ec, size_t length )
@@ -328,9 +331,10 @@ namespace Toolbox
 										if ( !ec )
 										{
 											// onWrite
-											_SendBuf.clear();
 										}
 									} );
+
+				_SendBuf.clear();
 			}
 
 			//
@@ -418,6 +422,11 @@ namespace Toolbox
 			{
 				_SendBuf.append( val.str() );
 				return *this;
+			}
+
+			Socket &operator<<( const Any &val )
+			{
+				return addToStream<>( val );
 			}
 
 		protected:
@@ -577,19 +586,19 @@ namespace Toolbox
 				return _Port;
 			}
 
-			void Run()
+			virtual void Run()
 			{
 				doAccept();
 				_IOService->run();
 			}
 
-			void Stop()
+			virtual void Stop()
 			{
 				_IOService->stop();
 			}
 
 		protected:
-			void doAccept()
+			virtual void doAccept()
 			{
 				if ( !_IOService )
 					_ManageIOService = true;
