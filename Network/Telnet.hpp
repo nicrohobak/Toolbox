@@ -41,6 +41,7 @@ public:
 
 		// Add telnet commands
 		SET_MEMBER_CMD_FUNC( "?",			&MySocket::Help );
+		SET_MEMBER_CMD_FUNC( "compact",		&MySocket::Compact );
 		SET_MEMBER_CMD_FUNC( "clear",		&MySocket::CLS );
 		SET_MEMBER_CMD_FUNC( "cls",			&MySocket::CLS );
 		SET_MEMBER_CMD_FUNC( "help",		&MySocket::Help );
@@ -58,20 +59,17 @@ public:
 	//
 	TOOLBOX_EVENT_HANDLER( onWindowSize )
 	{
-		*this << endl;
-		*this << "Server) Window size set to: " << _WindowSize.Width << "," << _WindowSize.Height;
+		*this << "Server) Window size set to: " << _WindowSize.Width << "," << _WindowSize.Height << endl;
 	}
 
 	TOOLBOX_EVENT_HANDLER( onEnableTelnetOption )
 	{
-		*this << endl;
-		*this << "Server) Telnet option enabled: " << Toolbox::Network::Telnet::OptionName( (Toolbox::Network::Telnet::Option)eventData["option"].AsInt() );
+		*this << "Server) Telnet option enabled: " << Toolbox::Network::Telnet::OptionName( (Toolbox::Network::Telnet::Option)eventData["option"].AsInt() ) << endl;
 	}
 
 	TOOLBOX_EVENT_HANDLER( onDisableTelnetOption )
 	{
-		*this << endl;
-		*this << "Server) Telnet option disabled: " << Toolbox::Network::Telnet::OptionName( (Toolbox::Network::Telnet::Option)eventData["option"].AsInt() );
+		*this << "Server) Telnet option disabled: " << Toolbox::Network::Telnet::OptionName( (Toolbox::Network::Telnet::Option)eventData["option"].AsInt() ) << endl;
 	}
 
 	//
@@ -79,8 +77,6 @@ public:
 	//
 	TOOLBOX_EVENT_HANDLER( onConnect )
 	{
-		std::cout << this << " -- MySocket::onConnect()" <<  std::endl;
-
 		std::list< std::string > CurrentClients;
 
 		// Inform all connected clients
@@ -91,7 +87,6 @@ public:
 				continue;
 
 			// Currently using this pointer addresses as chat IDs
-			*s->get() << endl;
 			*s->get() << "Server) " << this << " has connected." << endl;
 
 			std::stringstream ID("");
@@ -100,24 +95,22 @@ public:
 		}
 
 		// Use the << operator to add to the outgoing buffer (std::stringstream converts the stream to std::string)
-		*this << endl;
 		*this << "=======================================" << endl;
 		*this << " Welcome to the Example Telnet Server!" << endl << endl;
 		*this << "  Anything typed will be sent to all" << endl;
 		*this << "     currently connected clients." << endl << endl;
 		*this << " (Type '/?' for help.)" << endl;
-		*this << "=======================================";
+		*this << "=======================================" << endl;
 	}
 
 	TOOLBOX_EVENT_HANDLER( onClose )
 	{
-		std::cout << this << " -- MySocket::onClose()" <<  std::endl;
 		Write( "\n\rServer) Bye bye!\n\r\n\r" );
 	}
 
 	TOOLBOX_EVENT_HANDLER( onHandleChar )
 	{
-		std::cout << this << " -- MySocket::HandleChar(): " << eventData["input"].AsChar() << std::endl;
+		//std::cout << this << " -- MySocket::HandleChar(): " << eventData["input"].AsChar() << std::endl;
 	}
 
 	TOOLBOX_EVENT_HANDLER( onHandleLine )
@@ -132,7 +125,7 @@ public:
 
 			Toolbox::Event::Data EventData;
 			std::string Word, Command;
-	
+
 			std::stringstream Chopper( Line );
 			Chopper >> Word;
 			EventData["command"] = Command = Word;
@@ -157,9 +150,7 @@ public:
 
 			// And pass it to our makeshift command parser
 			if ( !_Commands.HandleEvent(Command, EventData) )
-			{
-				*this << "Server) *** Command not found: /" << Line;
-			}
+				*this << "Server) *** Command not found: /" << Line << endl;
 		}
 		else
 		{
@@ -171,17 +162,28 @@ public:
 					continue;
 
 				// Currently using this pointer addresses as chat IDs
-				*s->get() << endl;
-				*s->get() << this << " ) " << Line;
+				*s->get() << this << " ) " << Line << endl;
 			}
 
-			*this << "*" << this << " ) " << Line;
+			*this << "*" << this << " ) " << Line << endl;
 		}
 	}
 
 	//
 	// Client Commands
 	//
+	CMD_FUNC( Compact )
+	{
+		*this << "Compact mode: ";
+
+		if ( this->CompactMode() )
+			*this << "Disabled." << endl;
+		else
+			*this << "Enabled." << endl;
+
+		this->CompactMode( !_CompactMode );
+	}
+
 	CMD_FUNC( CLS )
 	{
 		*this << Toolbox::Network::VT100::Cmd( Toolbox::Network::VT100::Cmd_EraseDisplay );
@@ -190,7 +192,6 @@ public:
 
 	CMD_FUNC( Help )
 	{
-		*this << endl;
 		*this << "Available slash commands:" << endl;
 
 		for ( auto c = _Commands.begin(), c_end = _Commands.end(); c != c_end; ++c )
@@ -201,7 +202,6 @@ public:
 	{
 		_Prompt = eventData["args"].AsStr();
 
-		*this << endl;
 		*this << "Prompt set to: " << _Prompt << endl;
 	}
 
@@ -212,11 +212,10 @@ public:
 
 	CMD_FUNC( Show )
 	{
-		*this << endl;
 		*this << "Current client options:" << endl;
 		*this << "  - Window Size" << endl;
 		*this << "    - Width:  " << _WindowSize.Width << endl;
-		*this << "    - Height: " << _WindowSize.Height;
+		*this << "    - Height: " << _WindowSize.Height << endl;
 	}
 
 	CMD_FUNC( Shutdown )
@@ -250,8 +249,6 @@ public:
 
 	CMD_FUNC( Windowsize )
 	{
-		*this << endl;
-
 		auto Width = eventData.Find( "arg1" );
 		auto Height = eventData.Find( "arg2" );
 
@@ -394,7 +391,8 @@ namespace Toolbox
 		public:
 			TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_START_INIT( TelnetSocket )
 				_Readmode( Readmode_DEFAULT ),
-				_Prompt( ") " ),
+				_Prompt( "> " ),
+				_CompactMode( false ),
 			TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_END_INIT
 			{
 				// Set default telnet options
@@ -406,6 +404,16 @@ namespace Toolbox
 
 			virtual ~TelnetSocket()
 			{
+			}
+
+			bool CompactMode() const
+			{
+				return _CompactMode;
+			}
+
+			void CompactMode( bool compact )
+			{
+				_CompactMode = compact;
 			}
 
 			virtual void Close()
@@ -437,7 +445,14 @@ namespace Toolbox
 				if ( _SendBuf.empty() )
 					return;
 
-				*this << endl << endl << _Prompt;
+				// Start us off on a fresh line each time
+				this->Write( endl );
+
+				if ( !this->CompactMode() )
+					*this << endl << _Prompt;
+				else
+					*this << _Prompt;
+
 				tParent::Flush();
 			}
 
@@ -450,6 +465,8 @@ namespace Toolbox
 			tTelnetOptions	_OutstandingQueries;	// Allows us to keep track of queries we've sent the client so we to properly handle the response (instead of treating it as a client request)
 
 			std::string		_Prompt;
+
+			bool			_CompactMode;
 
 			struct WindowSize
 			{
@@ -494,10 +511,6 @@ namespace Toolbox
 					case '\n':
 					case '\r':
 					{
-						// Echo
-						if ( IsOptEnabled(Telnet::Opt_Echo) )
-							*this << endl;
-
 						_Readmode = Readmode_Newline;
 
 						EventData["input"] = _LineBuf;
@@ -523,11 +536,9 @@ namespace Toolbox
 						// Echo
 						if ( IsOptEnabled(Telnet::Opt_Echo) )
 						{
-							//*this << ch;
 							std::stringstream Char;
 							Char << ch;
 							Write( Char.str() );
-							this->Flush();
 						}
 
 						_LineBuf.push_back( ch );
@@ -768,7 +779,7 @@ namespace Toolbox
 						{
 							// Echo
 							if ( _Options[Telnet::Opt_Echo] )
-								Write( _LineBuf + endl );
+								Write( _LineBuf );
 
 							EventData["input"] = _LineBuf;
 							HandleEvent( "onHandleLine", EventData );
@@ -777,8 +788,8 @@ namespace Toolbox
 							_Readmode = Readmode_Newline;
 							break;
 						}
-
-						_LineBuf.push_back( input );
+						else
+							_LineBuf.push_back( input );
 					}
 					else // Character mode
 						parseChar( input );
