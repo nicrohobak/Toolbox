@@ -24,7 +24,7 @@ namespace Toolbox
 		class Gamete : public Genome
 		{
 		public:
-			TOOLBOX_MEMORY_POINTERS( Gamete )
+			TOOLBOX_POINTERS( Gamete )
 
 		public:
 			Gamete()
@@ -45,7 +45,7 @@ namespace Toolbox
 		class Embryo : public Gamete
 		{
 		public:
-			TOOLBOX_MEMORY_POINTERS( Embryo )
+			TOOLBOX_POINTERS( Embryo )
 
 		public:
 			Embryo():
@@ -108,7 +108,7 @@ namespace Toolbox
 		class Organism
 		{
 		public:
-			TOOLBOX_MEMORY_POINTERS( Organism )
+			TOOLBOX_POINTERS( Organism )
 
 			typedef Chromosome::tMutationRate	tMutationRate;
 			typedef Genome::tChromosomeList		tChromosomeList;

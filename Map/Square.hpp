@@ -39,7 +39,7 @@ namespace Toolbox
 				typedef _tTokenData						tTokenData;
 				typedef tSquare< tTokenData, tCoordType >	tData;
 
-				TOOLBOX_MEMORY_POINTERS( tToken<tTokenData> )
+				TOOLBOX_POINTERS( tToken<tTokenData> )
 
 			public:
 				tSquare< tTokenData, tCoordType >		Data;		// Token data is of the same map type, but with a potentially different tileset

@@ -143,7 +143,7 @@ namespace Toolbox
 	class GLShader
 	{
 	public:
-		TOOLBOX_MEMORY_POINTERS( GLShader )
+		TOOLBOX_POINTERS( GLShader )
 
 	public:
 		GLuint		ID;
@@ -161,7 +161,7 @@ namespace Toolbox
 	class GLModel
 	{
 	public:
-		TOOLBOX_MEMORY_POINTERS( GLModel )
+		TOOLBOX_POINTERS( GLModel )
 
 	public:
 		GLuint		ID;

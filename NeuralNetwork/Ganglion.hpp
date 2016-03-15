@@ -66,7 +66,7 @@ namespace Toolbox
 		public:
 			typedef _tNeuron																	ttNeuron;
 
-			TOOLBOX_MEMORY_POINTERS( tGanglion<ttNeuron> )
+			TOOLBOX_POINTERS( tGanglion<ttNeuron> )
 
 			typedef typename ttNeuron::tNeurotransmitter										tNeurotransmitter;
 			typedef typename ttNeuron::tNucleus													tNucleus;

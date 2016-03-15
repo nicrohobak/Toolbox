@@ -21,7 +21,7 @@ namespace Toolbox
 		class Genome : public std::enable_shared_from_this< Genome >
 		{
 		public:
-			TOOLBOX_MEMORY_POINTERS( Genome )
+			TOOLBOX_POINTERS( Genome )
 
 			typedef Chromosome::tDominance			tDominance;
 			typedef Chromosome::tGender				tGender;

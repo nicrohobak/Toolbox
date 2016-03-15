@@ -132,7 +132,7 @@ namespace Toolbox
 	class Shader
 	{
 	public:
-		TOOLBOX_MEMORY_POINTERS_AND_LISTS( Shader )
+		TOOLBOX_POINTERS_AND_LISTS( Shader )
 
 	public:
 		Shader( const std::string &fileName = std::string(), tShader type = Shader_Invalid ):
@@ -174,7 +174,7 @@ namespace Toolbox
 	class Texture
 	{
 	public:
-		TOOLBOX_MEMORY_POINTERS_AND_LISTS( Texture )
+		TOOLBOX_POINTERS_AND_LISTS( Texture )
 
 	public:
 		Texture( const std::string &fileName = std::string(""), const std::string &imagePlugin = std::string("") )
@@ -228,7 +228,7 @@ namespace Toolbox
 	class Model
 	{
 	public:
-		TOOLBOX_MEMORY_POINTERS_AND_LISTS( Model )
+		TOOLBOX_POINTERS_AND_LISTS( Model )
 		TOOLBOX_DEFINE_STATIC_PLUGIN_MGR( Model, Model_Plugin )
 
 	public:

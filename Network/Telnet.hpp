@@ -24,7 +24,7 @@
 class MySocket : public Toolbox::Network::TelnetSocket
 {
 public:
-	typedef Toolbox::Network::TelnetSocket		tParent;	// Requirement of TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR
+    TOOLBOX_PARENT( Toolbox::Network::TelnetSocket )		// Requirement of TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR
 
 	TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR( MySocket )
 	{

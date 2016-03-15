@@ -88,7 +88,7 @@ namespace Toolbox
 	class Image
 	{
 	public:
-		TOOLBOX_MEMORY_POINTERS( Image )
+		TOOLBOX_POINTERS( Image )
 		TOOLBOX_DEFINE_STATIC_PLUGIN_MGR( Image, Image_Plugin )
 
 	public:

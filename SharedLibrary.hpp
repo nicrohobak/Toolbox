@@ -60,7 +60,7 @@ int main( int argc, char *argv[] )
 #include <stdexcept>
 #include <string>
 
-#include <Toolbox/Memory.hpp>
+#include <Toolbox/Defines.h>
 
 
 extern "C"
@@ -77,7 +77,7 @@ namespace Toolbox
 	class SharedLibrary
 	{
 	public:
-		TOOLBOX_MEMORY_POINTERS( SharedLibrary )
+		TOOLBOX_POINTERS( SharedLibrary )
 
 	public:
 		SharedLibrary( const std::string &fileName ):

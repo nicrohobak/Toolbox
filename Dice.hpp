@@ -59,7 +59,7 @@
 
 #include <random>
 
-#include <Toolbox/Memory.hpp>
+#include <Toolbox/Defines.h>
 
 
 namespace Toolbox
@@ -71,7 +71,7 @@ namespace Toolbox
 	class Dice
 	{
 	public:
-		TOOLBOX_MEMORY_POINTERS( Dice<_NumSides> )
+		TOOLBOX_POINTERS( Dice<_NumSides> )
 
 	public:
 		DiceResults Roll( size_t numDice )

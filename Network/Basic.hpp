@@ -170,7 +170,7 @@ int main( int argc, char *argv[] )
 #include <asio.hpp>
 
 #include <Toolbox/Event.hpp>
-#include <Toolbox/Memory.hpp>
+#include <Toolbox/Defines.h>
 
 
 namespace Toolbox
@@ -194,7 +194,7 @@ namespace Toolbox
 
 
 		// Advanced constructor definition for custom Toolbox::Network::Socket classes
-		// - IMPORTANT: Requires a tParent typedef in the class!
+		// - IMPORTANT: Requires use of TOOLBOX_PARENT() (Defines.h) in the class!
 		//              typedef ParentClass tParent;
 		// - Allows for member initializations
 		#define TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_START_INIT( tCustomSocket )			\
@@ -246,7 +246,7 @@ namespace Toolbox
 					   public Event::Listener
 		{
 		public:
-			TOOLBOX_MEMORY_POINTERS_AND_LISTS( Socket )
+			TOOLBOX_POINTERS_AND_LISTS( Socket )
 			constexpr static size_t BUFFER_SIZE = 1;
 			constexpr static char *endl = "\n\r";
 
@@ -461,7 +461,7 @@ namespace Toolbox
 		class Server : public std::enable_shared_from_this< Server >
 		{
 		public:
-			TOOLBOX_MEMORY_POINTERS_AND_LISTS( Server )
+			TOOLBOX_POINTERS_AND_LISTS( Server )
 			typedef Socket::List::iterator					iterator;
 			typedef Socket::List::const_iterator			const_iterator;
 			typedef Socket::List::reverse_iterator			reverse_iterator;

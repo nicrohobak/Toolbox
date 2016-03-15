@@ -39,7 +39,7 @@
 #include <cstdlib>
 #include <map>
 
-#include <Toolbox/Memory.hpp>
+#include <Toolbox/Defines.h>
 
 
 namespace Toolbox
@@ -84,7 +84,7 @@ namespace Toolbox
 		public:
 			typedef _tCoordType		tCoordType;
 
-			TOOLBOX_MEMORY_POINTERS( tCoordinate<tCoordType> )
+			TOOLBOX_POINTERS( tCoordinate<tCoordType> )
 
 		public:
 			tCoordType				X, Y, Z;
@@ -116,7 +116,7 @@ namespace Toolbox
 		public:
 			typedef _tTileData		tTileData;
 
-			TOOLBOX_MEMORY_POINTERS( tTile<tTileData> )
+			TOOLBOX_POINTERS( tTile<tTileData> )
 
 		public:
 			tTileData		Data;
@@ -161,7 +161,7 @@ namespace Toolbox
 			class Token : public std::enable_shared_from_this< Token >
 			{
 			public:
-				TOOLBOX_MEMORY_POINTERS( Token )
+				TOOLBOX_POINTERS( Token )
 
 				virtual ~Token()
 				{

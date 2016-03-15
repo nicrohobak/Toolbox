@@ -18,7 +18,7 @@ namespace Toolbox
 		class Shepherd : public std::enable_shared_from_this< Shepherd<tOrganism> >
 		{
 		public:
-			TOOLBOX_MEMORY_POINTERS( Shepherd<tOrganism> )
+			TOOLBOX_POINTERS( Shepherd<tOrganism> )
 
 			typedef std::list< typename tOrganism::Ptr >	tFlock;
 

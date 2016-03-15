@@ -85,7 +85,7 @@
 
 #include <cmath>
 
-#include <Toolbox/Memory.hpp>
+#include <Toolbox/Defines.h>
 
 
 namespace Toolbox
@@ -212,7 +212,7 @@ namespace Toolbox
 			typedef _tNeurotransmitter					tNeurotransmitter;
 			typedef _Neuron< tNeurotransmitter >		tNeuron;
 
-			TOOLBOX_MEMORY_POINTERS( tNeuron )
+			TOOLBOX_POINTERS( tNeuron )
 
 			typedef std::map< wPtr, tNeurotransmitter,
 						std::owner_less<wPtr> >			tDendrites;	// Neuron inputs & weights
@@ -458,7 +458,7 @@ namespace Toolbox
 			typedef tNeuron< tNucleus >						ttNeuron;
 			typedef typename tNucleus::tNeurotransmitter	tNeurotransmitter;
 
-			TOOLBOX_MEMORY_POINTERS( ttNeuron )
+			TOOLBOX_POINTERS( ttNeuron )
 
 			typedef _Neuron< tNeurotransmitter >			Parent;
 
@@ -530,7 +530,7 @@ namespace Toolbox
 			typedef tLabeledNeuron< tNucleus >				ttLabeledNeuron;
 			typedef tNeuron< tNucleus >						Parent;
 
-			TOOLBOX_MEMORY_POINTERS( tLabeledNeuron )
+			TOOLBOX_POINTERS( tLabeledNeuron )
 
 		public:
 			tLabeledNeuron():

@@ -93,7 +93,7 @@ int main( int argc, char *argv[] )
 #include <string>
 
 #include <Toolbox/Any.hpp>
-#include <Toolbox/Memory.hpp>
+#include <Toolbox/Defines.h>
 
 
 namespace Toolbox
@@ -197,7 +197,7 @@ namespace Toolbox
 		class Listener
 		{
 		public:
-			TOOLBOX_MEMORY_POINTERS_AND_LISTS( Listener )
+			TOOLBOX_POINTERS_AND_LISTS( Listener )
 			typedef std::function< void( const Data &data ) >	EventHandlerFunc;
 			typedef std::map< Type, EventHandlerFunc >	HandlerFuncs;
 
@@ -274,7 +274,7 @@ namespace Toolbox
 		class Emitter
 		{
 		public:
-			TOOLBOX_MEMORY_POINTERS_AND_LISTS( Emitter )
+			TOOLBOX_POINTERS_AND_LISTS( Emitter )
 
 		public:
 			void AddListener( Listener::Ptr listener )

@@ -61,7 +61,7 @@ namespace Toolbox
 		public:
 			typedef _tNeurotransmitter						tNeurotransmitter;
 
-			TOOLBOX_MEMORY_POINTERS( tTrainingData<tNeurotransmitter> )
+			TOOLBOX_POINTERS( tTrainingData<tNeurotransmitter> )
 
 		public:
 			std::map< std::string, tNeurotransmitter >		Input;
@@ -96,7 +96,7 @@ namespace Toolbox
 			typedef tTrainingData< tNeurotransmitter >		ttTrainingData;
 			typedef tTrainingSet< ttGanglion >				ttTrainingSet;
 
-			TOOLBOX_MEMORY_POINTERS( tTrainingData<ttGanglion> )
+			TOOLBOX_POINTERS( tTrainingData<ttGanglion> )
 
 		public:
 			tTrainingSet()
@@ -254,7 +254,7 @@ namespace Toolbox
 			typedef tTrainingData< tNeurotransmitter >				ttTrainingData;
 			typedef tTrainingSet< ttGanglion >						ttTrainingSet;
 
-			TOOLBOX_MEMORY_POINTERS( tTrainer<tNeurotransmitter> )
+			TOOLBOX_POINTERS( tTrainer<tNeurotransmitter> )
 
 		public:
 			tNeurotransmitter										LearningRate;

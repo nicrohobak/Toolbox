@@ -14,7 +14,7 @@
 #include <sstream>
 #include <string>
 
-#include <Toolbox/Memory.hpp>
+#include <Toolbox/Defines.h>
 
 
 namespace Toolbox
@@ -34,7 +34,7 @@ namespace Toolbox
 		class tAllele : public std::enable_shared_from_this< tAllele >
 		{
 		public:
-			TOOLBOX_MEMORY_POINTERS( tAllele )
+			TOOLBOX_POINTERS( tAllele )
 
 			typedef Default::tMutationFactor		tMutationFactor;
 
@@ -60,7 +60,7 @@ namespace Toolbox
 		class Allele : public tAllele
 		{
 		public:
-			TOOLBOX_MEMORY_POINTERS( Allele<tAlleleType> )
+			TOOLBOX_POINTERS( Allele<tAlleleType> )
 
 			typedef Default::tMutationFactor		tMutationFactor;
 
@@ -107,7 +107,7 @@ namespace Toolbox
 		class Chromosome
 		{
 		public:
-			TOOLBOX_MEMORY_POINTERS( Chromosome )
+			TOOLBOX_POINTERS( Chromosome )
 
 			typedef unsigned int					tDominance;
 			typedef char							tGender;

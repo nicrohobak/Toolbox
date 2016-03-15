@@ -76,7 +76,7 @@ namespace Toolbox
 		public:																\
 			constexpr static const char *Name = #tInterface;				\
 			constexpr static const char *APIVersion = #tVersion;			\
-			TOOLBOX_MEMORY_POINTERS( tInterface )							\
+			TOOLBOX_POINTERS( tInterface )							\
 																			\
 			virtual ~tInterface() { }
 
@@ -90,7 +90,7 @@ namespace Toolbox
 		public:																\
 			constexpr static const char *Name = #tInterface;				\
 			constexpr static const char *APIVersion = #tVersion;			\
-			TOOLBOX_MEMORY_POINTERS( tInterface )
+			TOOLBOX_POINTERS( tInterface )
 
 
 
@@ -99,7 +99,7 @@ namespace Toolbox
 		class tImplementation : public tInterface							\
 		{																	\
 		public:																\
-			TOOLBOX_MEMORY_POINTERS( tImplementation )						\
+			TOOLBOX_POINTERS( tImplementation )						\
 																			\
 			virtual ~tImplementation() { }
 
@@ -111,7 +111,7 @@ namespace Toolbox
 		class tImplementation : public tInterface							\
 		{																	\
 		public:																\
-			TOOLBOX_MEMORY_POINTERS( tImplementation )
+			TOOLBOX_POINTERS( tImplementation )
 
 
 	// Terminates TOOLBOX_DEFINE_PLUGIN*() macros
@@ -201,7 +201,7 @@ namespace Toolbox
 	class Plugin 
 	{
 	public:
-		TOOLBOX_MEMORY_POINTERS_AND_LISTS( Plugin )
+		TOOLBOX_POINTERS_AND_LISTS( Plugin )
 
 	public:
 		constexpr static char *Invalid = "!INVALID!";
@@ -368,7 +368,7 @@ namespace Toolbox
 	class PluginManager
 	{
 	public:
-		TOOLBOX_MEMORY_POINTERS( PluginManager )
+		TOOLBOX_POINTERS( PluginManager )
 
 	public:
 		PluginManager()

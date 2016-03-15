@@ -214,7 +214,7 @@
 	class MathBot : public Toolbox::Genetics::Organism
 	{
 	public:
-		TOOLBOX_MEMORY_POINTERS( MathBot )
+		TOOLBOX_POINTERS( MathBot )
 
 		typedef Toolbox::Genetics::Organism					tParent;
 		typedef Toolbox::Genetics::Chromosome::tDominance	tDominance;

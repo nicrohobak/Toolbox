@@ -33,7 +33,7 @@ typedef Map::Token								Token;			// Default token type
 class CustomToken : public Map::tToken< tCustomToken >
 {
 public:
-	TOOLBOX_MEMORY_POINTERS( CustomToken )
+	TOOLBOX_POINTERS( CustomToken )
 
 public:
 	char Facing;			// Which direction is this token facing?
