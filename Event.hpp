@@ -179,6 +179,16 @@ namespace Toolbox
 				return _Data.at( key );
 			}
 
+			iterator Find( const KeyType &key )
+			{
+				return _Data.find( key );
+			}
+
+			const_iterator Find( const KeyType &key ) const
+			{
+				return _Data.find( key );
+			}
+
 		protected:
 			DataType	_Data;
 		};
