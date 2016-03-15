@@ -398,6 +398,9 @@ namespace Toolbox
 				case Any_Double:
 					return (long)_data.Double;
 
+				case Any_Str:
+					return std::atol(_str.c_str());
+
 				default:
 					return _data.Long;
 			}
@@ -417,6 +420,9 @@ namespace Toolbox
 				case Any_Long:
 				case Any_ULong:
 					return (double)_data.Long;
+
+				case Any_Str:
+					return std::atof(_str.c_str());
 
 				default:
 					return _data.Double;
