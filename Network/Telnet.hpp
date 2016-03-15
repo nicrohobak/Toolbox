@@ -4,9 +4,7 @@
 /*
  * Toolbox/Network/Telnet.hpp
  *
- * A Telnet Server
- *
- * Currently just a stub awaiting code migration...
+ * A Customizable Telnet Server
  */
 
 
@@ -30,7 +28,12 @@ public:
 
 	TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR( MySocket )
 	{
-		// Set Toolbox::Network event handlers
+		// Set Toolbox::Network::TelnetSocket event handlers
+		TOOLBOX_EVENT_SET_MEMBER_HANDLER( "onWindowSize",			&MySocket::onWindowSize )
+		TOOLBOX_EVENT_SET_MEMBER_HANDLER( "onEnableTelnetOption",	&MySocket::onEnableTelnetOption )
+		TOOLBOX_EVENT_SET_MEMBER_HANDLER( "onDisableTelnetOption",	&MySocket::onDisableTelnetOption )
+
+		// Set Toolbox::Network::Socket event handlers
 		TOOLBOX_EVENT_SET_MEMBER_HANDLER( "onConnect",		&MySocket::onConnect )
 		TOOLBOX_EVENT_SET_MEMBER_HANDLER( "onClose",		&MySocket::onClose )
 		TOOLBOX_EVENT_SET_MEMBER_HANDLER( "onHandleChar",	&MySocket::onHandleChar )
@@ -41,12 +44,139 @@ public:
 		SET_MEMBER_CMD_FUNC( "clear",		&MySocket::CLS );
 		SET_MEMBER_CMD_FUNC( "cls",			&MySocket::CLS );
 		SET_MEMBER_CMD_FUNC( "help",		&MySocket::Help );
+		SET_MEMBER_CMD_FUNC( "prompt",		&MySocket::Prompt );
 		SET_MEMBER_CMD_FUNC( "quit",		&MySocket::Quit );
-		//SET_MEMBER_CMD_FUNC( "show",		&MySocket::Show );
+		SET_MEMBER_CMD_FUNC( "show",		&MySocket::Show );
 		SET_MEMBER_CMD_FUNC( "shutdown",	&MySocket::Shutdown );
 		//SET_MEMBER_CMD_FUNC( "termtype",	&MySocket::Termtype );
-		//SET_MEMBER_CMD_FUNC( "windowsize",	&MySocket::Windowsize );
+		SET_MEMBER_CMD_FUNC( "windowsize",	&MySocket::Windowsize );
 		SET_MEMBER_CMD_FUNC( "who",			&MySocket::Who );
+	}
+
+	//
+	// TelnetSocket Event Handlers
+	//
+	TOOLBOX_EVENT_HANDLER( onWindowSize )
+	{
+		*this << endl;
+		*this << "Server) Window size set to: " << _WindowSize.Width << "," << _WindowSize.Height;
+	}
+
+	TOOLBOX_EVENT_HANDLER( onEnableTelnetOption )
+	{
+		*this << endl;
+		*this << "Server) Telnet option enabled: " << Toolbox::Network::Telnet::OptionName( (Toolbox::Network::Telnet::Option)eventData["option"].AsInt() );
+	}
+
+	TOOLBOX_EVENT_HANDLER( onDisableTelnetOption )
+	{
+		*this << endl;
+		*this << "Server) Telnet option disabled: " << Toolbox::Network::Telnet::OptionName( (Toolbox::Network::Telnet::Option)eventData["option"].AsInt() );
+	}
+
+	//
+	// Socket Event Handlers
+	//
+	TOOLBOX_EVENT_HANDLER( onConnect )
+	{
+		std::cout << this << " -- MySocket::onConnect()" <<  std::endl;
+
+		std::list< std::string > CurrentClients;
+
+		// Inform all connected clients
+		for ( auto s = _Server->begin(), s_end = _Server->end(); s != s_end; ++s )
+		{
+			// Skip ourselves
+			if ( s->get() == this )
+				continue;
+
+			// Currently using this pointer addresses as chat IDs
+			*s->get() << endl;
+			*s->get() << "Server) " << this << " has connected." << endl;
+
+			std::stringstream ID("");
+			ID << this;
+			CurrentClients.push_back( ID.str() );
+		}
+
+		// Use the << operator to add to the outgoing buffer (std::stringstream converts the stream to std::string)
+		*this << endl;
+		*this << "=======================================" << endl;
+		*this << " Welcome to the Example Telnet Server!" << endl << endl;
+		*this << "  Anything typed will be sent to all" << endl;
+		*this << "     currently connected clients." << endl << endl;
+		*this << " (Type '/?' for help.)" << endl;
+		*this << "=======================================";
+	}
+
+	TOOLBOX_EVENT_HANDLER( onClose )
+	{
+		std::cout << this << " -- MySocket::onClose()" <<  std::endl;
+		Write( "\n\rServer) Bye bye!\n\r\n\r" );
+	}
+
+	TOOLBOX_EVENT_HANDLER( onHandleChar )
+	{
+		std::cout << this << " -- MySocket::HandleChar(): " << eventData["input"].AsChar() << std::endl;
+	}
+
+	TOOLBOX_EVENT_HANDLER( onHandleLine )
+	{
+		std::string Line( eventData["input"].AsStr() );
+
+		// Parse slash commands
+		if ( *Line.begin() == '/' )
+		{
+			// Delete the slash from the command
+			Line.erase( Line.begin() );
+
+			Toolbox::Event::Data EventData;
+			std::string Word, Command;
+	
+			std::stringstream Chopper( Line );
+			Chopper >> Word;
+			EventData["command"] = Command = Word;
+
+			// Trim the command off of the args
+			const char WhitespaceChars[] = " \t\n\r";
+			EventData["args"] = Line.substr( Line.find_first_of(WhitespaceChars) + 1 );
+
+			// Pull each separate argument apart too -- Starting count from 1 to avoid arg0
+			for ( int i = 1; ; ++i )
+			{
+				Word.clear();
+				std::stringstream CurLabel("");
+				CurLabel << "arg" << i;
+				Chopper >> Word;
+
+				if ( Word.empty() )
+					break;
+
+				EventData[ CurLabel.str() ] = Word;
+			}
+
+			// And pass it to our makeshift command parser
+			if ( !_Commands.HandleEvent(Command, EventData) )
+			{
+				*this << "Server) *** Command not found: /" << Line;
+			}
+		}
+		else
+		{
+			// Send to all connected clients
+			for ( auto s = _Server->begin(), s_end = _Server->end(); s != s_end; ++s )
+			{
+				// Skip ourselves
+				if ( s->get() == this )
+					continue;
+
+				// Currently using this pointer addresses as chat IDs
+				*s->get() << endl;
+				*s->get() << this << " ) " << Line;
+			}
+
+			*this << "*" << this << " ) " << Line;
+		}
 	}
 
 	//
@@ -56,7 +186,6 @@ public:
 	{
 		*this << Toolbox::Network::VT100::Cmd( Toolbox::Network::VT100::Cmd_EraseDisplay );
 		*this << Toolbox::Network::VT100::Cmd( Toolbox::Network::VT100::Cmd_SetCursorPos, 0, 0 );
-		Flush();
 	}
 
 	CMD_FUNC( Help )
@@ -66,8 +195,14 @@ public:
 
 		for ( auto c = _Commands.begin(), c_end = _Commands.end(); c != c_end; ++c )
 			*this << "\t" << c->first << endl;
+	}
 
-		Flush();
+	CMD_FUNC( Prompt )
+	{
+		_Prompt = eventData["args"].AsStr();
+
+		*this << endl;
+		*this << "Prompt set to: " << _Prompt << endl;
 	}
 
 	CMD_FUNC( Quit )
@@ -77,22 +212,29 @@ public:
 
 	CMD_FUNC( Show )
 	{
+		*this << endl;
+		*this << "Current client options:" << endl;
+		*this << "  - Window Size" << endl;
+		*this << "    - Width:  " << _WindowSize.Width << endl;
+		*this << "    - Height: " << _WindowSize.Height;
 	}
 
 	CMD_FUNC( Shutdown )
 	{
 		if ( _Server )
 		{
+			// NOTE: Using streams here (during server shutdown) won't work because they add to the output buffer...but the output buffer is flushed with the help of the server.
+			//       The current implementation includes an automatic prompt with streams too...something we don't necessarily want to display during a shutdown message.  Write() gets around this issue too.
+			std::stringstream Msg("");
+			Msg << endl << "The server is shutting down...goodbye!" << endl;
+
 			for ( auto s = _Server->begin(), s_end = _Server->end(); s != s_end; ++s )
 			{
 				// Give an extra newline to the ones who didn't dispatch the command
 				if ( s->get() != this )
-					*s->get() << endl;
+					(*s)->Write( endl );
 
-				*s->get() << endl;
-				*s->get() << "The server is shutting down...goodbye!" << endl << endl;
-				(*s)->Flush();
-
+				(*s)->Write( Msg.str() );
 			}
 
 			_Server->Stop();
@@ -103,10 +245,27 @@ public:
 
 	CMD_FUNC( Termtype )
 	{
+		// TODO: Set the term type
 	}
 
 	CMD_FUNC( Windowsize )
 	{
+		*this << endl;
+
+		auto Width = eventData.Find( "arg1" );
+		auto Height = eventData.Find( "arg2" );
+
+		if ( Width == eventData.end() || Height == eventData.end() )
+		{
+			RequestOpt( Toolbox::Network::Telnet::Opt_WindowSize );
+			*this << "Server) Attempting to query your client for its current window size..."; 
+			return;
+		}
+
+		_WindowSize.Width = Width->second.AsUShort();
+		_WindowSize.Height = Height->second.AsUShort();
+
+		*this << "Server) Window size set to: " << _WindowSize.Width << "," << _WindowSize.Height;
 	}
 
 	CMD_FUNC( Who )
@@ -131,106 +290,6 @@ public:
 
 		for ( auto c = Clients.begin(), c_end = Clients.end(); c != c_end; ++c )
 			*this << "\t" << *c << endl;
-
-		*this << endl << ") ";
-
-		Flush();
-	}
-
-	//
-	// Event Handlers
-	//
-	TOOLBOX_EVENT_HANDLER( onConnect )
-	{
-		std::cout << this << " -- MySocket::onConnect()" <<  std::endl;
-
-		std::list< std::string > CurrentClients;
-
-		// Inform all connected clients
-		for ( auto s = _Server->begin(), s_end = _Server->end(); s != s_end; ++s )
-		{
-			// Skip ourselves
-			if ( s->get() == this )
-				continue;
-
-			// Currently using this pointer addresses as chat IDs
-			*s->get() << endl << endl;
-			*s->get() << "Server ) " << this << " has connected.";
-			*s->get() << endl << endl;
-			*s->get() << ") ";						// Prompt
-			(*s)->Flush();							// Send
-
-			std::stringstream ID("");
-			ID << this;
-			CurrentClients.push_back( ID.str() );
-		}
-
-		// Use the << operator to add to the outgoing buffer (std::stringstream converts the stream to std::string)
-		*this << endl;
-		*this << "=======================================" << endl;
-		*this << " Welcome to the Example Telnet Server!" << endl << endl;
-		*this << "  Anything typed will be sent to all" << endl;
-		*this << "     currently connected clients." << endl << endl;
-		*this << " (Type '/?' for help.)" << endl;
-		*this << "=======================================" << endl << endl;
-
-		// Send the outgoing buffer
-		Flush();
-
-		// Or write to the socket immediately with Write()
-		// Prompt
-		Write( ") " );
-	}
-
-	TOOLBOX_EVENT_HANDLER( onClose )
-	{
-		std::cout << this << " -- MySocket::onClose()" <<  std::endl;
-		Write( "\n\rServer) Bye bye!\n\r\n\r" );
-	}
-
-	TOOLBOX_EVENT_HANDLER( onHandleChar )
-	{
-		std::cout << this << " -- MySocket::HandleChar(): " << eventData["input"].AsChar() << std::endl;
-	}
-
-	TOOLBOX_EVENT_HANDLER( onHandleLine )
-	{
-		std::string Line( eventData["input"].AsStr() );
-
-		// Parse slash commands
-		if ( *Line.begin() == '/' )
-		{
-			// Delete the slash from the command
-			Line.erase( Line.begin() );
-
-			// And pass it to our makeshift command parser
-			if ( !_Commands.HandleEvent(Line) )
-			{
-				*this << "Server ) *** Command not found: /" << Line;
-				*this << endl << endl << ") ";
-				Flush();
-			}
-		}
-		else
-		{
-			// Send to all connected clients
-			for ( auto s = _Server->begin(), s_end = _Server->end(); s != s_end; ++s )
-			{
-				// Skip ourselves
-				if ( s->get() == this )
-					continue;
-
-				// Currently using this pointer addresses as chat IDs
-				*s->get() << endl;
-				*s->get() << this << " ) " << Line;
-				*s->get() << endl << endl << ") ";	// Prompt
-				(*s)->Flush();						// Send
-			}
-
-			*this << "*" << this << " ) " << Line;
-			*this << endl << endl << ") ";			// Prompt
-			Flush();								// Send
-		}
 	}
 
 protected:
@@ -279,6 +338,8 @@ int main( int argc, char *argv[] )
 
 #include <bitset>
 
+#include <boost/date_time/posix_time/posix_time.hpp>	// It would be nice to elimiate this dependency...
+
 #include <Toolbox/Network/Basic.hpp>
 #include <Toolbox/Network/Telnet.h>
 #include <Toolbox/Network/VT100.h>
@@ -294,6 +355,19 @@ namespace Toolbox
 		typedef std::bitset< Telnet::Option::Opt_MAX >		tTelnetOptions;
 
 
+		//
+		// Locally emits (but doesn't handle) the following events:
+		//
+		// - onWindowSize			- Called when the window size is renegotiated
+		// 							  ["prev_width"] - (short int)
+		// 							  ["prev_height"] - (short int)
+		//
+		// - onEnableTelnetOption	- Called when a telnet option is successfully enabled
+		// 							  ["option"] - (enum) Toolbox::Network::Telnet::Option
+		//
+		// - onDisableTelnetOption	- Called when a telnet option is successfully disabled
+		// 							  ["option"] - (enum) Toolbox::Network::Telnet::Option
+		//
 		class TelnetSocket : public Socket
 		{
 		public:
@@ -320,6 +394,7 @@ namespace Toolbox
 		public:
 			TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_START_INIT( TelnetSocket )
 				_Readmode( Readmode_DEFAULT ),
+				_Prompt( ") " ),
 			TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_END_INIT
 			{
 				// Set default telnet options
@@ -333,12 +408,37 @@ namespace Toolbox
 			{
 			}
 
+			virtual void Close()
+			{
+				this->Flush();
+				tParent::Close();
+			}
+
+			const std::string &Prompt() const
+			{
+				return _Prompt;
+			}
+
+			virtual void SetPrompt( const std::string &prompt )
+			{
+				_Prompt = prompt;
+			}
+
 			// Makes a request to the client to enable an option
 			void RequestOpt( Telnet::Option opt );
 
 			bool IsOptEnabled( Telnet::Option opt )
 			{
 				return _Options[ opt ];
+			}
+
+			virtual void Flush()
+			{
+				if ( _SendBuf.empty() )
+					return;
+
+				*this << endl << endl << _Prompt;
+				tParent::Flush();
 			}
 
 		protected:
@@ -349,6 +449,8 @@ namespace Toolbox
 			std::string		_CurOptData;			// Telnet-handler current telnet option data
 			tTelnetOptions	_OutstandingQueries;	// Allows us to keep track of queries we've sent the client so we to properly handle the response (instead of treating it as a client request)
 
+			std::string		_Prompt;
+
 			struct WindowSize
 			{
 				WindowSize():
@@ -357,9 +459,9 @@ namespace Toolbox
 				{
 				}
 
-				short 	Width;
-				short 	Height;
-			}			_WindowSize;
+				unsigned short int 	Width;
+				unsigned short int 	Height;
+			}						_WindowSize;
 
 		protected:
 			// Overriding this lets us interject telnet handling before onHandleChar and onHandleLine are triggered so they can still be used as-expected
@@ -394,7 +496,7 @@ namespace Toolbox
 					{
 						// Echo
 						if ( IsOptEnabled(Telnet::Opt_Echo) )
-							Write( endl );
+							*this << endl;
 
 						_Readmode = Readmode_Newline;
 
@@ -421,8 +523,11 @@ namespace Toolbox
 						// Echo
 						if ( IsOptEnabled(Telnet::Opt_Echo) )
 						{
-							*this << ch;
-							Flush();
+							//*this << ch;
+							std::stringstream Char;
+							Char << ch;
+							Write( Char.str() );
+							this->Flush();
 						}
 
 						_LineBuf.push_back( ch );
@@ -451,16 +556,21 @@ namespace Toolbox
 						unsigned char Height_H = _CurOptData.c_str()[2];
 						unsigned char Height_L = _CurOptData.c_str()[3];
 
+						Event::Data EventData;
+						EventData["prev_width"]  = _WindowSize.Width;
+						EventData["prev_height"] = _WindowSize.Height;
+
 						if ( Width_H != 0 )
-							_WindowSize.Width = ((short)Width_H + 255) + (short)Width_L;
+							_WindowSize.Width = ((unsigned short)Width_H + 255) + (unsigned short)Width_L;
 						else
-							_WindowSize.Width = (short)Width_L;
+							_WindowSize.Width = (unsigned short)Width_L;
 
 						if ( Height_H != 0 )
-							_WindowSize.Height = ((short)Height_H + 255) + (short)Height_L;
+							_WindowSize.Height = ((unsigned short)Height_H + 255) + (unsigned short)Height_L;
 						else
-							_WindowSize.Height = (short)Height_L;
+							_WindowSize.Height = (unsigned short)Height_L;
 
+						HandleEvent( "onWindowSize", EventData );
 						break;
 					}
 
@@ -481,13 +591,21 @@ namespace Toolbox
 		class TelnetServer : public Server
 		{
 		public:
+			typedef asio::deadline_timer		Timer;
+			typedef std::shared_ptr< Timer >	Timer_Ptr;
+
+			constexpr static unsigned int DEFAULT_OUTPUT_PULSE_DELAY = 100;
+
+		public:
 			TelnetServer( short int port = DEFAULT_PORT ):
+				_OutputPulseDelay( DEFAULT_OUTPUT_PULSE_DELAY ),
 				Server( port )
 			{
 				setCapabilities();
 			}
 
 			TelnetServer( asio::io_service &io, short int port = DEFAULT_PORT ):
+				_OutputPulseDelay( DEFAULT_OUTPUT_PULSE_DELAY ),
 				Server( io, port )
 			{
 				setCapabilities();
@@ -507,11 +625,36 @@ namespace Toolbox
 				_Options[ opt ] = enabled;
 			}
 
+			// Sets the delay in milliseconds
+			void SetOutputPulseDelay( unsigned int delay )
+			{
+				_OutputPulseDelay = delay;
+
+				if ( _OutputTimer )
+				{
+					_OutputTimer->expires_from_now( boost::posix_time::milliseconds(_OutputPulseDelay) );
+					_OutputTimer->async_wait( std::bind(&TelnetServer::handleOutputPulse, this) );
+				}
+			}
+
 		protected:
-			tTelnetOptions	_Options;			// Available telnet options
+			tTelnetOptions			_Options;			// Available telnet options
+
+			unsigned int			_OutputPulseDelay;	// In milliseconds
+			Timer_Ptr				_OutputTimer;		// Client output buffers are automatically flushed at regular intervals
 
 		protected:
 			TOOLBOX_NETWORK_SERVER_CREATE_SOCKET( TelnetSocket )
+
+			virtual void doAccept()
+			{
+				// Make sure our io_service exists...
+				Server::doAccept();
+
+				// So we can add our timer to it
+				_OutputTimer = Timer_Ptr( new Timer(*_IOService) );
+				SetOutputPulseDelay( _OutputPulseDelay );
+			}
 
 			void setCapabilities()
 			{
@@ -525,6 +668,25 @@ namespace Toolbox
 				_Options[ Telnet::Opt_RemoteFlowCtrl ]	= false;
 				_Options[ Telnet::Opt_LineMode ]		= true;
 				_Options[ Telnet::Opt_EnvVars ]			= false;
+			}
+
+			// Keep the virtual handler function free of timer programming obligations
+			void handleOutputPulse()
+			{
+				onOutputPulse();
+
+				if ( _OutputTimer )
+				{
+					_OutputTimer->expires_from_now( boost::posix_time::milliseconds(_OutputPulseDelay) );
+					_OutputTimer->async_wait( std::bind(&TelnetServer::handleOutputPulse, this) );
+				}
+			}
+
+			// Calls Flush() on all clients
+			virtual void onOutputPulse()
+			{
+				for ( auto s = _Sockets.begin(), s_end = _Sockets.end(); s != s_end; ++s )
+					(*s)->Flush();
 			}
 		};
 
@@ -810,7 +972,13 @@ namespace Toolbox
 
 					// Only report we will if we're able to set it...also, don't bother informating that we won't do LineMode at all (just like above)
 					if ( setOptEnabled(CurOpt) && CurOpt != Telnet::Opt_LineMode )
+					{
 						Response[1] = (char)Telnet::Cmd_WILL;
+
+						Event::Data EventData;
+						EventData["option"] = CurOpt;
+						HandleEvent( "onEnableTelnetOption", EventData );
+					}
 					else
 						Response[1] = (char)Telnet::Cmd_WONT;
 
@@ -824,6 +992,10 @@ namespace Toolbox
 					_Readmode = Readmode_Normal;
 
 					setOptEnabled( CurOpt, false );
+
+					Event::Data EventData;
+					EventData["option"] = CurOpt;
+					HandleEvent( "onDisableTelnetOption", EventData );
 
 					Response[1] = (char)Telnet::Cmd_WONT;
 					Response[2] = (char)CurOpt;
