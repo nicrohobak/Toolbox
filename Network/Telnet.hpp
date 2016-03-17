@@ -416,6 +416,16 @@ namespace Toolbox
 				_CompactMode = compact;
 			}
 
+			unsigned short Width() const
+			{
+				return _WindowSize.Width;
+			}
+
+			unsigned short Height() const
+			{
+				return _WindowSize.Height;
+			}
+
 			virtual void Close()
 			{
 				this->Flush();
