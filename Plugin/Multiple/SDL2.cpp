@@ -22,10 +22,6 @@ namespace Toolbox
 	//
 	TOOLBOX_DEFINE_PLUGIN_D( AppWindow, SDL2Window )
 
-		typedef std::map< tAppWindowOption, tAppWindowOptionValue >	tAppWindowOptions;
-
-		//////////
-
 		SDL2Window():
 			_Window( NULL ),
 			_OpenGLContext( NULL )
@@ -35,44 +31,6 @@ namespace Toolbox
 		virtual ~SDL2Window()
 		{
 			this->Destroy();
-		}
-
-		virtual void SetOption( tAppWindowOption option, tAppWindowOptionValue value = tAppWindowOptionValue() )
-		{
-			constexpr const char *dbg_CurFunc = "AppWindow::SDL2Window::SetOption(tAppWindowOption)";
-
-			if ( option == AppWindowOption_INVALID )
-				throw std::runtime_error( std::string(dbg_CurFunc) + ": Setting AppWindowOption_INVALID is not allowed." );
-
-			_WindowOptions[ option ] = value;
-		}
-
-		virtual void UnsetOption( tAppWindowOption option )
-		{
-			//constexpr const char *dbg_CurFunc = "AppWindow::SDL2Window::UnsetOption(tAppWindowOption)";
-
-			auto Opt = _WindowOptions.find( option );
-
-			if ( Opt != _WindowOptions.end() )
-				_WindowOptions.erase( Opt );
-		}
-
-		virtual tAppWindowOptionValue GetOption( tAppWindowOption option )
-		{
-			constexpr const char *dbg_CurFunc = "AppWindow::SDL2Window::GetOption(tAppWindowOption)";
-
-			if ( option == AppWindowOption_INVALID )
-				throw std::runtime_error( std::string(dbg_CurFunc) + ": Setting AppWindowOption_INVALID is not allowed." );
-
-			tAppWindowOptionValue ReturnVal = tAppWindowOptionValue();
-
-			auto Opt = _WindowOptions.find( option );
-
-			// Only assign the value if the option is set
-			if ( Opt != _WindowOptions.end() )
-				ReturnVal = Opt->second;
-
-			return ReturnVal;
 		}
 
 		virtual void Create( const std::string &title, int width, int height )
@@ -181,12 +139,9 @@ namespace Toolbox
 			SDL_GL_SwapWindow( _Window );
 		}
 
-
 	protected:
 		SDL_Window *		_Window;
 		SDL_GLContext		_OpenGLContext;
-
-		tAppWindowOptions	_WindowOptions;
 
 	TOOLBOX_END_PLUGIN_DEF
 

@@ -54,9 +54,11 @@ namespace Toolbox
 	};
 
 
-	TOOLBOX_DEFINE_PLUGIN_INTERFACE( AppWindow, 0.1 )
+	typedef unsigned int										tAppWindowOptionValue;
+	typedef std::map< tAppWindowOption, tAppWindowOptionValue >	tAppWindowOptions;
 
-		typedef unsigned int	tAppWindowOptionValue;
+
+	TOOLBOX_DEFINE_PLUGIN_INTERFACE( AppWindow, 0.1 )
 
 		constexpr static int	DEFAULT_WIDTH = 800;
 		constexpr static int	DEFAULT_HEIGHT = 600;
@@ -64,9 +66,41 @@ namespace Toolbox
 		//////////
 
 		virtual void SetOption( tAppWindowOption option,
-								tAppWindowOptionValue value = tAppWindowOptionValue() ) = 0;
-		virtual void UnsetOption( tAppWindowOption option ) = 0;
-		virtual tAppWindowOptionValue GetOption( tAppWindowOption option ) = 0;
+								tAppWindowOptionValue value = tAppWindowOptionValue() )
+		{
+			constexpr const char *dbg_CurFunc = "AppWindow::SetOption(tAppWindowOption)";
+
+			if ( option == AppWindowOption_INVALID )
+				throw std::runtime_error( std::string(dbg_CurFunc) + ": Setting AppWindowOption_INVALID is not allowed." );
+
+			_WindowOptions[ option ] = value;
+		}
+
+		virtual void UnsetOption( tAppWindowOption option )
+		{
+			auto Opt = _WindowOptions.find( option );
+
+			if ( Opt != _WindowOptions.end() )
+				_WindowOptions.erase( Opt );
+		}
+
+		virtual tAppWindowOptionValue GetOption( tAppWindowOption option )
+		{
+			constexpr const char *dbg_CurFunc = "AppWindow::GetOption(tAppWindowOption)";
+
+			if ( option == AppWindowOption_INVALID )
+				throw std::runtime_error( std::string(dbg_CurFunc) + ": Setting AppWindowOption_INVALID is not allowed." );
+
+			tAppWindowOptionValue ReturnVal = tAppWindowOptionValue();
+
+			auto Opt = _WindowOptions.find( option );
+
+			// Only assign the value if the option is set
+			if ( Opt != _WindowOptions.end() )
+				ReturnVal = Opt->second;
+
+			return ReturnVal;
+		}
 
 		virtual void Create( const std::string &title = std::string("Toolbox Application Window"),
 							 int width = DEFAULT_WIDTH,
@@ -87,6 +121,9 @@ namespace Toolbox
 		virtual void Delay( size_t milliseconds ) = 0;				// Delay for X milliseconds
 
 		virtual void Swap()		{ }									// Swap screen buffers (Optional)
+
+	protected:
+		tAppWindowOptions		_WindowOptions;
 
 	TOOLBOX_END_PLUGIN_DEF
 }
