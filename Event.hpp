@@ -103,8 +103,13 @@ namespace Toolbox
 		#define TOOLBOX_EVENT_BIND_PLACEHOLDERS	std::placeholders::_1
 		#define TOOLBOX_EVENT_MEMBER_BIND_PARAM	this, TOOLBOX_EVENT_BIND_PLACEHOLDERS
 
+		// Sets an event member function on a Listener object
 		#define TOOLBOX_EVENT_SET_MEMBER_HANDLER( tEvent, Func )						\
 				this->SetEventHandler( tEvent, std::bind(Func, TOOLBOX_EVENT_MEMBER_BIND_PARAM) );
+
+		// Same as above, but to assingan event member function on a different Listener object
+		#define TOOLBOX_EVENT_ASSIGN_MEMBER_HANDLER( tChild, tEvent, Func )				\
+				(tChild).SetEventHandler( tEvent, std::bind(Func, TOOLBOX_EVENT_MEMBER_BIND_PARAM) );
 
 		#define TOOLBOX_EVENT_PARAMS			const Toolbox::Event::Data &eventData
 
