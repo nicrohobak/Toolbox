@@ -166,6 +166,7 @@ int main( int argc, char *argv[] )
 /****************************************************************************/
 
 #include <sstream>
+#include <thread>
 
 #include <asio.hpp>
 
@@ -181,8 +182,15 @@ namespace Toolbox
 		// Constants and Typedefs
 		//
 		const short int DEFAULT_PORT			= 9876;
+
+		typedef asio::io_service				IOService;
+		typedef std::shared_ptr< IOService >	IOService_Ptr;
+
 		typedef asio::ip::tcp::socket			CoreSocket;
 		typedef std::shared_ptr< CoreSocket >	CoreSocket_Ptr;
+
+		typedef std::thread						Thread;
+		typedef std::shared_ptr< Thread >		Thread_Ptr;
 
 
 		//
@@ -269,10 +277,10 @@ namespace Toolbox
 					case 0:		// NULL
 						break;
 
-					case '\n':	// Newline
-					case '\r':	// Carriage Return
-					case 3:		// End of Text
-					case 4:		// End of Line
+					case '\n':		// Newline
+					case '\r':		// Carriage Return
+					case '\003':	// End of Text
+					case '\004':	// End of Transmission
 					{
 						if ( !_LineBuf.empty() )
 						{
@@ -291,8 +299,30 @@ namespace Toolbox
 			}
 
 		public:
+			Socket():
+				_Active( false ),
+				_Closing( false ),
+				_BufferingOutput( false ),
+				_Server( NULL )
+			{
+				resetCharBuf();
+			}
+
+			Socket( const std::string &host, const std::string &port ):
+				_Active( false ),
+				_Closing( false ),
+				_BufferingOutput( false ),
+				_Server( NULL )
+			{
+				resetCharBuf();
+				Connect( host, port );
+			}
+
 			Socket( TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_PARAMS ):
+				_Active( true ),
+				_Closing( false ),
 				_Socket( socket ),
+				_BufferingOutput( false ),
 				_Server( &server )
 			{
 				resetCharBuf();
@@ -300,41 +330,98 @@ namespace Toolbox
 
 			virtual ~Socket()
 			{
+				if ( _IOService )
+					_IOService->stop();
+
+				if ( _IOThread && _IOThread->joinable() )
+					_IOThread->join();
 			}
 
-			virtual void Close();
+			virtual void Close()
+			{
+				if ( Connected() )
+				{
+					// "Local" events can just call the handler directly
+					this->HandleEvent( "onClose" );
+					_Closing = true;
+					this->Flush();
+				}
+			}
 
-			// Sends to the client immediately
+			bool Connected() const
+			{
+				return (_Active && !_Closing);
+			}
+
+			// Sends to the client immediately (unless we have to wait due to async restrictions)
 			virtual void Write( const std::string &msg )
 			{
-				asio::async_write( *_Socket,
-									asio::buffer(msg.c_str(), msg.length()),
-									[this]( std::error_code ec, size_t length )
-									{
-										if ( !ec )
-										{
-											// onWrite
-										}
-									} );
+				this->doWrite( msg );
 			}
 
 			// Flushes the outgoing buffer, sending it to the client
 			virtual void Flush()
 			{
-				if ( _SendBuf.empty() )
+				this->doWrite( _SendBuf );
+				_SendBuf.clear();
+			}
+
+			// Only used when acting as a client and not when associated with a _Server
+			virtual void Connect( const std::string &host, const std::string &port )
+			{
+				if ( _Server )
 					return;
 
-				asio::async_write( *_Socket,
-									asio::buffer(_SendBuf.c_str(), _SendBuf.length()),
-									[this]( std::error_code ec, size_t length )
-									{
-										if ( !ec )
-										{
-											// onWrite
-										}
-									} );
+				if ( _Active )
+					this->Close();
 
-				_SendBuf.clear();
+				if ( !_IOService )
+					_IOService = std::make_shared< asio::io_service >();
+
+				if ( _Socket )
+					_Socket.reset();
+
+				_Socket = std::make_shared< CoreSocket >( *_IOService );
+
+				asio::ip::tcp::resolver Resolver( *_IOService );
+				auto Dest = Resolver.resolve( {host, port} );
+
+				_Active = false;
+				_Closing = false;
+
+				asio::async_connect( *_Socket, Dest,
+					[this, host, port]( std::error_code ec, asio::ip::tcp::resolver::iterator )
+					{
+						Event::Data EventData;
+						EventData["host"] = host;
+						EventData["port"] = port;
+
+						if ( !ec )
+						{
+							EventData["connected"] = true;
+							_Active = true;
+						}
+						else
+							EventData["connected"] = false;
+
+						this->HandleEvent( "onConnect", EventData );
+
+						// This will start the client (or, immediately close it upon a failed connection)
+						this->doRead();
+					} );
+
+				// If we have a previously stopped thread, then prepare it for another run
+				if ( _IOThread )
+				{
+					_IOThread->join();
+					_IOThread.reset();
+				}
+
+				_IOThread = std::make_shared< Thread >( [this]()
+														{
+															_IOService->run();		// Run the work we have
+															_IOService->reset();	// And prep for a retry when its done
+														} );
 			}
 
 			//
@@ -435,7 +522,43 @@ namespace Toolbox
 				memset( _CharBuf, BUFFER_SIZE + 1, 0 );
 			}
 
+			void doClose();										// The actual work function...no event emitted here
 			void doRead();
+
+			void doWrite( const std::string &msg )
+			{
+				if ( !_Active )
+					return;
+
+				if ( _BufferingOutput )
+				{
+					_OutputBuf.append( msg );
+					return;
+				}
+
+				_BufferingOutput = true;
+
+				asio::async_write( *_Socket,
+									asio::buffer(msg.c_str(), msg.length()),
+									[this]( std::error_code ec, size_t length )
+									{
+										if ( !ec )
+										{
+											// onWrite
+											_BufferingOutput = false;
+
+											if ( _OutputBuf.empty() && _Closing )
+											{
+												doClose();
+											}
+											else if ( _Active && !_OutputBuf.empty() )
+											{
+												this->Write( _OutputBuf );
+												_OutputBuf.clear();
+											}
+										}
+									} );
+			}
 
 			template <typename tType>
 			Socket &addToStream( const tType &val )
@@ -447,12 +570,20 @@ namespace Toolbox
 			}
 
 		protected:
-			CoreSocket_Ptr	_Socket;
-			unsigned char	_CharBuf[ BUFFER_SIZE + 1 ];	// Incoming buffer
-			std::string		_LineBuf;						// Incoming buffer
-			std::string		_SendBuf;						// Outgoing buffer
+			CoreSocket_Ptr		_Socket;
 
-			Server *		_Server;
+			bool				_Active;						// A flag to keep track of when the socket is open
+			bool				_Closing;						// A flag to signal when the socket is terminating
+			bool				_BufferingOutput;				// A flag to help us make sure we don't initiate two simultaneous async_write operations
+
+			unsigned char		_CharBuf[ BUFFER_SIZE + 1 ];	// Incoming buffer
+			std::string			_LineBuf;						// Incoming buffer
+			std::string			_SendBuf;						// User Outgoing buffer
+			std::string			_OutputBuf;						// Socket Outgoing buffer
+
+			Server *			_Server;						// Client/server -- If NULL, this is a Client socket
+			IOService_Ptr		_IOService;						// Client standalone IO service
+			Thread_Ptr			_IOThread;						// Client standalone IO service run() helper
 
 			friend class Server;
 		};
@@ -664,15 +795,23 @@ namespace Toolbox
 		//
 		// Socket functions that require a fully-defined Server
 		//
-		void Socket::Close()
+		void Socket::doClose()
 		{
-			// "Local" events can just call the handler directly
-			this->HandleEvent( "onClose" );
+			_Active = false;
 
+			// Stop any active async operations on our socket
+			if ( _Socket )
+				_Socket->cancel();
+
+			// Server socket cleanup
 			if ( _Server )
+			{
+				if ( _Socket )
+					_Socket->close();
+
 				_Server->removeSocket( shared_from_this() );
-	
-			_Server = NULL;
+				_Server = NULL;
+			}
 		}
 
 		void Socket::doRead()
@@ -683,15 +822,20 @@ namespace Toolbox
 									{
 										if ( ec )
 										{
-											Close();
+											// Failed to connect, or non-graceful disconnect
+											_Closing = true;
+											doClose();
 											return;
 										}
-										
-										this->readChar( _CharBuf[0] );
 
-										// Validate that we still have a server so we don't try a new read after being closed
-										if ( _Server )
-											doRead();
+										// Make sure we don't continue to read when we're closing the socket
+										if ( !_Closing )
+										{
+											this->readChar( _CharBuf[0] );
+
+											if ( _Active )
+												doRead();
+										}
 									} );
 		}
 
