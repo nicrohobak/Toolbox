@@ -465,16 +465,21 @@ namespace Toolbox
 
 			virtual void Flush()
 			{
-				if ( _SendBuf.empty() )
-					return;
+				// If we're a server socket, then display some extras
+				if ( _Server )
+				{
+					if ( _SendBuf.empty() )
+						return;
 
-				// Start us off on a fresh line each time
-				this->Write( endl );
+					// Start us off on a fresh line each time
+					this->Write( endl );
 
-				if ( !this->CompactMode() )
-					*this << endl << _Prompt;
-				else
-					*this << _Prompt;
+					// Compact mode and prompt
+					if ( !this->CompactMode() )
+						*this << endl << _Prompt;
+					else
+						*this << _Prompt;
+				}
 
 				tParent::Flush();
 			}
@@ -1004,48 +1009,34 @@ namespace Toolbox
 				{
 					_Readmode = Readmode_Normal;
 
-					if ( _Server )
+					// Check our outstanding queries so we don't always respond with "WILL" when the client acknowledges
+					if ( _OutstandingQueries[CurOpt] )
 					{
-						// Server socket
-						TelnetServer *ThisServer = dynamic_cast< TelnetServer * >( _Server );
+						_OutstandingQueries.reset( CurOpt );
+						break;
+					}
 
-						if ( !ThisServer )
-							throw std::runtime_error( "TelnetSocket::readChar(): _Server pointer is not a valid TelnetServer." );
+					// Don't bother informing that we'll do LineMode at all (linux telnet hates this, so I assume others will to)
+					if ( CurOpt == Telnet::Opt_LineMode )
+					{
+						setOptEnabled( CurOpt );
+						break;
+					}
 
-						// Check our outstanding queries so we don't always respond with "WILL" when the client acknowledges
-						if ( _OutstandingQueries[CurOpt] )
-						{
-							_OutstandingQueries.reset( CurOpt );
-							break;
-						}
+					// Only report we will if we're able to set it...also, don't bother informating that we won't do LineMode at all (just like above)
+					if ( setOptEnabled(CurOpt) && CurOpt != Telnet::Opt_LineMode )
+					{
+						Response[1] = (char)Telnet::Cmd_WILL;
 
-						// Don't bother informing that we'll do LineMode at all (linux telnet hates this, so I assume others will to)
-						if ( CurOpt == Telnet::Opt_LineMode )
-						{
-							setOptEnabled( CurOpt );
-							break;
-						}
-
-						// Only report we will if we're able to set it...also, don't bother informating that we won't do LineMode at all (just like above)
-						if ( setOptEnabled(CurOpt) && CurOpt != Telnet::Opt_LineMode )
-						{
-							Response[1] = (char)Telnet::Cmd_WILL;
-
-							Event::Data EventData;
-							EventData["option"] = CurOpt;
-							HandleEvent( "onEnableTelnetOption", EventData );
-						}
-						else
-							Response[1] = (char)Telnet::Cmd_WONT;
-
-						Response[2] = (char)CurOpt;
-						Write( Response );
+						Event::Data EventData;
+						EventData["option"] = CurOpt;
+						HandleEvent( "onEnableTelnetOption", EventData );
 					}
 					else
-					{
-						// Client socket
-						// TODO: Write me!
-					}
+						Response[1] = (char)Telnet::Cmd_WONT;
+
+					Response[2] = (char)CurOpt;
+					Write( Response );
 					break;
 				}
 

@@ -13,8 +13,22 @@
  * Example program:
 
 
-#define SIMPLE_CONSTRUCTOR_EXAMPLE	1
+//
+// If this is set, then we'll become the server example.
+// Otherwise, we become a client example that connects to
+//   a local server example.
+//
+#define SERVER_EXAMPLE	1
 
+
+#if SERVER_EXAMPLE
+
+//////////////////////////////////////////////////////////////////////////////
+// Server Example
+//////////////////////////////////////////////////////////////////////////////
+
+
+#define SIMPLE_CONSTRUCTOR_EXAMPLE	1
 
 class CustomSocket : public Toolbox::Network::Socket
 {
@@ -78,7 +92,8 @@ public:
 
 	TOOLBOX_EVENT_HANDLER( onHandleChar )
 	{
-		std::cout << this << " -- CustomSocket::HandleChar(): " << eventData["input"].AsChar() << std::endl;
+//		char Ch = eventData["input"].AsChar();
+//		std::cout << this << " -- CustomSocket::HandleChar(): " << Ch << "  (" << (int)Ch << ")" << std::endl;
 	}
 
 	TOOLBOX_EVENT_HANDLER( onHandleLine )
@@ -156,6 +171,117 @@ int main( int argc, char *argv[] )
 
     return ReturnCode;
 }
+
+
+//////////////////////////////////////////////////////////////////////////////
+// End Server Example
+//////////////////////////////////////////////////////////////////////////////
+
+#else // SERVER_EXAMPLE
+
+//////////////////////////////////////////////////////////////////////////////
+// Client Example
+//////////////////////////////////////////////////////////////////////////////
+
+
+//
+// Define a few macros to make things easier to type/read
+//
+#define CMD_FUNC( tCmd )					TOOLBOX_EVENT_HANDLER( tCmd )
+
+#define SET_MEMBER_CMD_FUNC( tCmd, Func )	\
+		_Commands.SetEventHandler( tCmd, std::bind(Func, TOOLBOX_EVENT_MEMBER_BIND_PARAM) );
+
+
+class Connection : public Toolbox::Network::Socket
+{
+public:
+    TOOLBOX_PARENT( Toolbox::Network::Socket )		// Requirement of TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR
+
+	//TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR( Connection )
+	Connection( const std::string &host, const std::string &port ):
+		tParent( host, port )
+	{
+		// Set Toolbox::Network::Socket event handlers
+		TOOLBOX_EVENT_SET_MEMBER_HANDLER( "onConnect",		&Connection::onConnect )
+		TOOLBOX_EVENT_SET_MEMBER_HANDLER( "onClose",		&Connection::onClose )
+		TOOLBOX_EVENT_SET_MEMBER_HANDLER( "onHandleChar",	&Connection::onHandleChar )
+		TOOLBOX_EVENT_SET_MEMBER_HANDLER( "onHandleLine",	&Connection::onHandleLine )
+	}
+
+	//
+	// Socket Event Handlers
+	//
+	TOOLBOX_EVENT_HANDLER( onConnect )
+	{
+		if ( eventData["connected"].AsBool() == true )
+			std::cout << "Client connected successfully!" << std::endl;
+		else
+			std::cout << "Failed to connect to the server!  Client exiting.  (Press enter to continue)" << std::endl;
+	}
+
+	TOOLBOX_EVENT_HANDLER( onClose )
+	{
+		std::cout << "Client exiting, goodbye!  (Press enter to continue)" << std::endl;
+	}
+
+	TOOLBOX_EVENT_HANDLER( onHandleChar )
+	{
+//		char Ch = eventData["input"].AsChar();
+//		std::cout << " -- Connection::HandleChar(): " << Ch << "  (" << (int)Ch << ")" << std::endl;
+	}
+
+	TOOLBOX_EVENT_HANDLER( onHandleLine )
+	{
+		// Make sure to std::flush what we get since we usually rely on std::endl for this
+		// Otherwise, lines without a newline (like prompts) may not appear
+		std::cout << eventData["input"].AsStr() << std::flush;
+	}
+};
+
+
+int main( int argc, char *argv[] )
+{
+	int ReturnCode = 0;
+
+    try
+    {
+		// Connect to our local default echo server
+		Connection Server( "localhost", "9876" );
+
+		std::string Input("");
+		bool Quit = false;
+
+		while ( !Quit )
+		{
+			Input.clear();
+			std::getline( std::cin, Input );
+
+			// Must come after the some delay (like std::getline()) so the async process can connect
+			if ( !Server.Connected() )
+				Quit = true;
+
+			if ( !Input.compare("#quit") )
+				Quit = true;
+			else
+				Server.Write( Input );
+		}
+    }
+    catch ( std::exception &ex )
+    {
+		std::cerr << "Fatal error: " << ex.what() << std::endl;
+		ReturnCode = 1;
+    }
+
+    return ReturnCode;
+}
+
+
+//////////////////////////////////////////////////////////////////////////////
+// End Client Example
+//////////////////////////////////////////////////////////////////////////////
+
+#endif
 
 
 // Build with:
@@ -255,8 +381,10 @@ namespace Toolbox
 		{
 		public:
 			TOOLBOX_POINTERS_AND_LISTS( Socket )
-			constexpr static size_t BUFFER_SIZE = 1;
-			constexpr static char *endl = "\n\r";
+			constexpr static size_t BUFFER_SIZE	= 1;
+			constexpr static char *endl			= "\n\r";	// Newline
+			constexpr static char EOTXT			= '\003';	// ASCII End of Text
+			constexpr static char EOT			= '\004';	// ASCII End of Transmission
 
 		protected:
 			// Called for every incoming byte
@@ -269,24 +397,30 @@ namespace Toolbox
 				this->HandleEvent( "onHandleChar", EventData );	// "Local" events can just call the handler directly
 
 				// Abandon ship if we get closed as we handle the above event
-				if ( !_Server )
+				if ( !_Socket )
 					return;
 
 				switch ( input )
 				{
 					case 0:		// NULL
-						break;
-
-					case '\n':		// Newline
-					case '\r':		// Carriage Return
-					case '\003':	// End of Text
-					case '\004':	// End of Transmission
+					case '\n':	// Newline
+					case '\r':	// Carriage Return
+					case EOTXT:	// End of Text
+					case EOT:	// End of Transmission
 					{
 						if ( !_LineBuf.empty() )
 						{
+							if ( !_Server && input == '\n' )	// But, if we're a client socket and it's specifically a newline character, lets go ahead and send one
+								_LineBuf.append( endl );
+
 							EventData["input"] = _LineBuf;
-							this->HandleEvent( "onHandleLine", EventData );	// "Local" events can just call the handler directly
+							this->HandleEvent( "onHandleLine", EventData );
 							_LineBuf.clear();
+						}
+						else if ( !_Server && input == '\n' )	// Even if it wasn't buffered
+						{
+							EventData["input"] = std::string( endl );
+							this->HandleEvent( "onHandleLine", EventData );
 						}
 
 						break;
@@ -301,6 +435,7 @@ namespace Toolbox
 		public:
 			Socket():
 				_Active( false ),
+				_Connecting( false ),
 				_Closing( false ),
 				_BufferingOutput( false ),
 				_Server( NULL )
@@ -310,6 +445,7 @@ namespace Toolbox
 
 			Socket( const std::string &host, const std::string &port ):
 				_Active( false ),
+				_Connecting( false ),
 				_Closing( false ),
 				_BufferingOutput( false ),
 				_Server( NULL )
@@ -320,6 +456,7 @@ namespace Toolbox
 
 			Socket( TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_PARAMS ):
 				_Active( true ),
+				_Connecting( false ),
 				_Closing( false ),
 				_Socket( socket ),
 				_BufferingOutput( false ),
@@ -388,6 +525,7 @@ namespace Toolbox
 
 				_Active = false;
 				_Closing = false;
+				_Connecting = true;
 
 				asio::async_connect( *_Socket, Dest,
 					[this, host, port]( std::error_code ec, asio::ip::tcp::resolver::iterator )
@@ -408,6 +546,8 @@ namespace Toolbox
 
 						// This will start the client (or, immediately close it upon a failed connection)
 						this->doRead();
+
+						_Connecting = false;
 					} );
 
 				// If we have a previously stopped thread, then prepare it for another run
@@ -538,8 +678,11 @@ namespace Toolbox
 
 				_BufferingOutput = true;
 
+				std::string Output( msg );
+				Output.push_back( EOT );						// Add an 'End of Transmission' character
+
 				asio::async_write( *_Socket,
-									asio::buffer(msg.c_str(), msg.length()),
+									asio::buffer(Output.c_str(), Output.length()),
 									[this]( std::error_code ec, size_t length )
 									{
 										if ( !ec )
@@ -573,6 +716,7 @@ namespace Toolbox
 			CoreSocket_Ptr		_Socket;
 
 			bool				_Active;						// A flag to keep track of when the socket is open
+			bool				_Connecting;					// A flag to signal when the socket is attempting to connect to a server
 			bool				_Closing;						// A flag to signal when the socket is terminating
 			bool				_BufferingOutput;				// A flag to help us make sure we don't initiate two simultaneous async_write operations
 
@@ -823,8 +967,15 @@ namespace Toolbox
 										if ( ec )
 										{
 											// Failed to connect, or non-graceful disconnect
-											_Closing = true;
-											doClose();
+											if ( _Connecting )
+											{
+												// Suppress the "onClose" event
+												_Closing = true;
+												doClose();
+											}
+											else
+												this->Close();
+
 											return;
 										}
 
