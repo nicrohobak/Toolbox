@@ -110,7 +110,7 @@ public:
 
 		if ( !Line.compare("shutdown") )
 		{
-			if ( _Server )
+			if ( IsServer() )
 			{
 				std::cout << this << " -- CustomSocket::onHandleLine(): Shutdown command received!" <<  std::endl;
 
@@ -410,14 +410,14 @@ namespace Toolbox
 					{
 						if ( !_LineBuf.empty() )
 						{
-							if ( !_Server && input == '\n' )	// But, if we're a client socket and it's specifically a newline character, lets go ahead and send one
+							if ( IsClient() && input == '\n' )	// But, if we're a client socket and it's specifically a newline character, lets go ahead and send one
 								_LineBuf.append( endl );
 
 							EventData["input"] = _LineBuf;
 							this->HandleEvent( "onHandleLine", EventData );
 							_LineBuf.clear();
 						}
-						else if ( !_Server && input == '\n' )	// Even if it wasn't buffered
+						else if ( IsClient() && input == '\n' )	// Even if it wasn't buffered
 						{
 							EventData["input"] = std::string( endl );
 							this->HandleEvent( "onHandleLine", EventData );
@@ -503,10 +503,22 @@ namespace Toolbox
 				_SendBuf.clear();
 			}
 
+			// Returns 'true' if this socket is operating as a stand-alone client
+			bool IsClient() const
+			{
+				return !_Server;
+			}
+
+			// Returns 'true' if this socket is operating as a part of a server
+			bool IsServer() const
+			{
+				return _Server;
+			}
+
 			// Only used when acting as a client and not when associated with a _Server
 			virtual void Connect( const std::string &host, const std::string &port )
 			{
-				if ( _Server )
+				if ( IsServer() )
 					return;
 
 				if ( _Active )
@@ -948,7 +960,7 @@ namespace Toolbox
 				_Socket->cancel();
 
 			// Server socket cleanup
-			if ( _Server )
+			if ( IsServer() )
 			{
 				if ( _Socket )
 					_Socket->close();

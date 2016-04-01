@@ -220,26 +220,21 @@ public:
 
 	CMD_FUNC( Shutdown )
 	{
-		if ( _Server )
+		// NOTE: Using streams here (during server shutdown) won't work because they add to the output buffer...but the output buffer is flushed with the help of the server.
+		//       The current implementation includes an automatic prompt with streams too...something we don't necessarily want to display during a shutdown message.  Write() gets around this issue too.
+		std::stringstream Msg("");
+		Msg << endl << "The server is shutting down...goodbye!" << endl;
+
+		for ( auto s = _Server->begin(), s_end = _Server->end(); s != s_end; ++s )
 		{
-			// NOTE: Using streams here (during server shutdown) won't work because they add to the output buffer...but the output buffer is flushed with the help of the server.
-			//       The current implementation includes an automatic prompt with streams too...something we don't necessarily want to display during a shutdown message.  Write() gets around this issue too.
-			std::stringstream Msg("");
-			Msg << endl << "The server is shutting down...goodbye!" << endl;
+			// Give an extra newline to the ones who didn't dispatch the command
+			if ( s->get() != this )
+				(*s)->Write( endl );
 
-			for ( auto s = _Server->begin(), s_end = _Server->end(); s != s_end; ++s )
-			{
-				// Give an extra newline to the ones who didn't dispatch the command
-				if ( s->get() != this )
-					(*s)->Write( endl );
-
-				(*s)->Write( Msg.str() );
-			}
-
-			_Server->Stop();
+			(*s)->Write( Msg.str() );
 		}
-		else
-			throw std::runtime_error( "MySocket::Shutdown(): Attempted server shutdown with invalid _Server pointer." );
+
+		_Server->Stop();
 	}
 
 	CMD_FUNC( Termtype )
@@ -368,7 +363,8 @@ namespace Toolbox
 		class TelnetSocket : public Socket
 		{
 		public:
-			typedef Socket		tParent;				// Requirement of TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR
+			TOOLBOX_POINTERS( TelnetSocket )
+			typedef Socket	tParent;					// Requirement of TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR
 
 			// Internal state for telnet protocol handling
 			enum Readmode
@@ -380,8 +376,10 @@ namespace Toolbox
 				Readmode_Cmd,
 				Readmode_Opt,
 				Readmode_Subneg,
-				Readmode_Will_Do,
-				Readmode_Wont_Dont,
+				Readmode_Will,
+				Readmode_Wont,
+				Readmode_Do,
+				Readmode_Dont,
 
 				Readmode_MAX,
 
@@ -466,7 +464,7 @@ namespace Toolbox
 			virtual void Flush()
 			{
 				// If we're a server socket, then display some extras
-				if ( _Server )
+				if ( IsServer() )
 				{
 					if ( _SendBuf.empty() )
 						return;
@@ -541,6 +539,14 @@ namespace Toolbox
 					case '\003':	// End of Line
 					case '\004':	// End of Transmission
 					{
+						// Client sockets always receive in character mode
+						if ( !_Server )
+						{
+							EventData["input"] = ch;
+							HandleEvent( "onHandleChar", EventData );
+							return;
+						}
+
 						if ( !_LineBuf.empty() )
 						{
 							_Readmode = Readmode_Newline;
@@ -566,15 +572,18 @@ namespace Toolbox
 
 					default:
 					{
-						// Echo
-						if ( IsOptEnabled(Telnet::Opt_Echo) )
+						// Echo (For servers...clients don't handle this here)
+						if ( IsServer() && IsOptEnabled(Telnet::Opt_Echo) )
 						{
 							std::stringstream Char;
 							Char << ch;
 							Write( Char.str() );
 						}
 
-						_LineBuf.push_back( ch );
+						// Client sockets always receive in character mode
+						if ( IsServer() )
+							_LineBuf.push_back( ch );
+
 						EventData["input"] = ch;
 						HandleEvent( "onHandleChar", EventData );
 						break;
@@ -628,6 +637,62 @@ namespace Toolbox
 						// Invalid telnet option
 						break;
 				}
+			}
+
+			// Sends telnet option information...but only if the option requires it
+			void sendTelnetOption( Telnet::Option opt )
+			{
+				std::stringstream Response;
+				Response << (char)Telnet::Cmd_IAC;
+				Response << (char)Telnet::Cmd_SB;
+				Response << (char)opt;
+
+				switch ( opt )
+				{
+					case Telnet::Opt_TermType:
+					{
+						// TODO: Implement me
+						Response << "vt100";
+						break;
+					}
+
+					case Telnet::Opt_WindowSize:
+					{
+						// Properly package the data for sending
+						unsigned char Width_H  = 0;
+						unsigned char Width_L  = 0;
+						unsigned char Height_H = 0;
+						unsigned char Height_L = 0;
+
+						if ( _WindowSize.Width > 255 )
+						{
+							Width_H = _WindowSize.Width - 255;
+							Width_L = 255;
+						}
+						else
+							Width_L = _WindowSize.Width;
+
+						if ( _WindowSize.Height > 255 )
+						{
+							Height_H = _WindowSize.Height - 255;
+							Height_L = 255;
+						}
+						else
+							Height_L = _WindowSize.Height;
+
+						Response << Width_H << Width_L;
+						Response << Height_H << Height_L;
+						break;
+					}
+
+					default:
+						// Option has nothing to send
+						return;
+				}
+
+				Response << (char)Telnet::Cmd_SE;
+
+				this->Write( Response.str() );
 			}
 		};
 
@@ -737,7 +802,7 @@ namespace Toolbox
 
 		void TelnetSocket::RequestOpt( Telnet::Option opt )
 		{
-			if ( _Server )
+			if ( IsServer() )
 			{
 				// Server socket
 				TelnetServer *ThisServer = dynamic_cast< TelnetServer * >( _Server );
@@ -816,21 +881,27 @@ namespace Toolbox
 
 					Event::Data EventData;
 
-					// Line mode
-					if ( !_Options[Telnet::Opt_SuppressGoAhead] )
+					// Line mode (Clients always need to use character mode here)
+					if ( IsServer() && !_Options[Telnet::Opt_SuppressGoAhead] )
 					{
 						if ( input == '\n'			// Newline
 						  || input == '\r'			// Carriage Return
 						  || input == '\003'		// End of Line
 						  || input == '\004' )		// End of Transmission
 						{
-							// Echo
-							if ( _Options[Telnet::Opt_Echo] )
+							// Echo (only if we're a server socket)
+							if ( IsServer() && _Options[Telnet::Opt_Echo] )
 								Write( _LineBuf );
+							// But clients need an actual newline injected sometimes
+							else if ( !_Server && input == '\n' )
+								_LineBuf.append( "\n\r" );
 
-							EventData["input"] = _LineBuf;
-							HandleEvent( "onHandleLine", EventData );
-							_LineBuf.clear();
+							if ( !_LineBuf.empty() )
+							{
+								EventData["input"] = _LineBuf;
+								HandleEvent( "onHandleLine", EventData );
+								_LineBuf.clear();
+							}
 
 							_Readmode = Readmode_Newline;
 							break;
@@ -933,19 +1004,31 @@ namespace Toolbox
 							return;
 						}
 
-						// Do / Will
-						case Telnet::Cmd_DO:
+						// Will
 						case Telnet::Cmd_WILL:
 						{
-							_Readmode = Readmode_Will_Do;
+							_Readmode = Readmode_Will;
 							return;
 						}
 
-						// Don't / Won't
-						case Telnet::Cmd_DONT:
+						// Won't
 						case Telnet::Cmd_WONT:
 						{
-							_Readmode = Readmode_Wont_Dont;
+							_Readmode = Readmode_Wont;
+							return;
+						}
+
+						// Do
+						case Telnet::Cmd_DO:
+						{
+							_Readmode = Readmode_Do;
+							return;
+						}
+
+						// Don't
+						case Telnet::Cmd_DONT:
+						{
+							_Readmode = Readmode_Dont;
 							return;
 						}
 
@@ -1005,7 +1088,8 @@ namespace Toolbox
 					break;
 				}
 
-				case Readmode_Will_Do:
+				case Readmode_Will:
+				case Readmode_Do:
 				{
 					_Readmode = Readmode_Normal;
 
@@ -1031,6 +1115,10 @@ namespace Toolbox
 						Event::Data EventData;
 						EventData["option"] = CurOpt;
 						HandleEvent( "onEnableTelnetOption", EventData );
+
+						// Inform the other side of any additional information
+						if ( !_Server )
+							sendTelnetOption( CurOpt );
 					}
 					else
 						Response[1] = (char)Telnet::Cmd_WONT;
@@ -1040,7 +1128,8 @@ namespace Toolbox
 					break;
 				}
 
-				case Readmode_Wont_Dont:
+				case Readmode_Wont:
+				case Readmode_Dont:
 				{
 					_Readmode = Readmode_Normal;
 
@@ -1064,7 +1153,7 @@ namespace Toolbox
 
 		bool TelnetSocket::setOptEnabled( Telnet::Option opt, bool enabled )
 		{
-			if ( _Server )
+			if ( IsServer() )
 			{
 				// Server socket
 				TelnetServer *ThisServer = dynamic_cast< TelnetServer * >( _Server );
