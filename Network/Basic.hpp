@@ -503,6 +503,9 @@ namespace Toolbox
 				_SendBuf.clear();
 			}
 
+			// Sends to all connected clients except ourselves (idential to Write() for client sockets)
+			virtual void Broadcast( const std::string &msg );
+
 			// Returns 'true' if this socket is operating as a stand-alone client
 			bool IsClient() const
 			{
@@ -691,7 +694,7 @@ namespace Toolbox
 				_BufferingOutput = true;
 
 				std::string Output( msg );
-				Output.push_back( EOT );						// Add an 'End of Transmission' character
+				Output.append( this->lineEnd() );			// Properly terminate the transmission
 
 				asio::async_write( *_Socket,
 									asio::buffer(Output.c_str(), Output.length()),
@@ -713,6 +716,14 @@ namespace Toolbox
 											}
 										}
 									} );
+			}
+
+			// Returns a proper line terminator for our transmission
+			virtual std::string lineEnd()
+			{
+				std::string End;
+				End.push_back( EOT );
+				return End;
 			}
 
 			template <typename tType>
@@ -951,6 +962,26 @@ namespace Toolbox
 		//
 		// Socket functions that require a fully-defined Server
 		//
+		void Socket::Broadcast( const std::string &msg )
+		{
+			if ( _Server )
+			{
+				for ( auto s = _Server->begin(), s_end = _Server->end(); s != s_end; ++s )
+				{
+					if ( s->get() != this )
+					{
+						*(*s) << msg;
+						(*s)->Flush();
+					}
+				}
+			}
+			else
+			{
+				*this << msg;
+				this->Flush();
+			}
+		}
+
 		void Socket::doClose()
 		{
 			_Active = false;

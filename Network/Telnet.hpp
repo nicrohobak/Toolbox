@@ -21,14 +21,18 @@
 		_Commands.SetEventHandler( tCmd, std::bind(Func, TOOLBOX_EVENT_MEMBER_BIND_PARAM) );
 
 
+typedef Toolbox::Network::TelnetSocket	MySocketParent;
+
+
 class MySocket : public Toolbox::Network::TelnetSocket
 {
 public:
-    TOOLBOX_PARENT( Toolbox::Network::TelnetSocket )		// Requirement of TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR
+	TOOLBOX_PARENT( MySocketParent )				// Requirement of TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR
 
 	TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR( MySocket )
 	{
 		// Set Toolbox::Network::TelnetSocket event handlers
+		TOOLBOX_EVENT_SET_MEMBER_HANDLER( "onTermType",				&MySocket::onTermType )
 		TOOLBOX_EVENT_SET_MEMBER_HANDLER( "onWindowSize",			&MySocket::onWindowSize )
 		TOOLBOX_EVENT_SET_MEMBER_HANDLER( "onEnableTelnetOption",	&MySocket::onEnableTelnetOption )
 		TOOLBOX_EVENT_SET_MEMBER_HANDLER( "onDisableTelnetOption",	&MySocket::onDisableTelnetOption )
@@ -44,12 +48,13 @@ public:
 		SET_MEMBER_CMD_FUNC( "compact",		&MySocket::Compact );
 		SET_MEMBER_CMD_FUNC( "clear",		&MySocket::CLS );
 		SET_MEMBER_CMD_FUNC( "cls",			&MySocket::CLS );
+		SET_MEMBER_CMD_FUNC( "echo",		&MySocket::Echo );
 		SET_MEMBER_CMD_FUNC( "help",		&MySocket::Help );
 		SET_MEMBER_CMD_FUNC( "prompt",		&MySocket::Prompt );
 		SET_MEMBER_CMD_FUNC( "quit",		&MySocket::Quit );
 		SET_MEMBER_CMD_FUNC( "show",		&MySocket::Show );
 		SET_MEMBER_CMD_FUNC( "shutdown",	&MySocket::Shutdown );
-		//SET_MEMBER_CMD_FUNC( "termtype",	&MySocket::Termtype );
+		SET_MEMBER_CMD_FUNC( "termtype",	&MySocket::Termtype );
 		SET_MEMBER_CMD_FUNC( "windowsize",	&MySocket::Windowsize );
 		SET_MEMBER_CMD_FUNC( "who",			&MySocket::Who );
 	}
@@ -57,19 +62,34 @@ public:
 	//
 	// TelnetSocket Event Handlers
 	//
+	TOOLBOX_EVENT_HANDLER( onTermType )
+	{
+		*this << "Server) Terminal type set to: " << TermType() << endl;
+	}
+
 	TOOLBOX_EVENT_HANDLER( onWindowSize )
 	{
-		*this << "Server) Window size set to: " << _WindowSize.Width << "," << _WindowSize.Height << endl;
+		*this << "Server) Window size set to: " << Width() << "," << Height() << endl;
 	}
 
 	TOOLBOX_EVENT_HANDLER( onEnableTelnetOption )
 	{
-		*this << "Server) Telnet option enabled: " << Toolbox::Network::Telnet::OptionName( (Toolbox::Network::Telnet::Option)eventData["option"].AsInt() ) << endl;
+		bool Successful = eventData["enabled"].AsBool();
+
+		if ( Successful )
+			*this << "Server) Telnet option enabled: " << Toolbox::Network::Telnet::OptionName( (Toolbox::Network::Telnet::Option)eventData["option"].AsInt() ) << endl;
+		else
+			*this << "Server) Failed to enable " << Toolbox::Network::Telnet::OptionName( (Toolbox::Network::Telnet::Option)eventData["option"].AsInt() ) << "." << endl;
 	}
 
 	TOOLBOX_EVENT_HANDLER( onDisableTelnetOption )
 	{
-		*this << "Server) Telnet option disabled: " << Toolbox::Network::Telnet::OptionName( (Toolbox::Network::Telnet::Option)eventData["option"].AsInt() ) << endl;
+		bool Successful = eventData["enabled"].AsBool();
+
+		if ( !Successful )
+			*this << "Server) Telnet option disabled: " << Toolbox::Network::Telnet::OptionName( (Toolbox::Network::Telnet::Option)eventData["option"].AsInt() ) << endl;
+		else
+			*this << "Server) Failed to disable " << Toolbox::Network::Telnet::OptionName( (Toolbox::Network::Telnet::Option)eventData["option"].AsInt() ) << "." << endl;
 	}
 
 	//
@@ -77,22 +97,10 @@ public:
 	//
 	TOOLBOX_EVENT_HANDLER( onConnect )
 	{
-		std::list< std::string > CurrentClients;
-
 		// Inform all connected clients
-		for ( auto s = _Server->begin(), s_end = _Server->end(); s != s_end; ++s )
-		{
-			// Skip ourselves
-			if ( s->get() == this )
-				continue;
-
-			// Currently using this pointer addresses as chat IDs
-			*s->get() << "Server) " << this << " has connected." << endl;
-
-			std::stringstream ID("");
-			ID << this;
-			CurrentClients.push_back( ID.str() );
-		}
+		std::stringstream Msg;
+		Msg << "Server) " << this << " has connected." << endl;
+		this->Broadcast( Msg.str() );
 
 		// Use the << operator to add to the outgoing buffer (std::stringstream converts the stream to std::string)
 		*this << "=======================================" << endl;
@@ -105,17 +113,23 @@ public:
 
 	TOOLBOX_EVENT_HANDLER( onClose )
 	{
+		std::stringstream Msg;
+		Msg << "Server) " << this << " has disconnected." << endl;
+		this->Broadcast( Msg.str() );
+
 		Write( "\n\rServer) Bye bye!\n\r\n\r" );
 	}
 
 	TOOLBOX_EVENT_HANDLER( onHandleChar )
 	{
-		//std::cout << this << " -- MySocket::HandleChar(): " << eventData["input"].AsChar() << std::endl;
+		std::cout << this << " -- MySocket::HandleChar(): " << eventData["input"].AsChar() << std::endl;
 	}
 
 	TOOLBOX_EVENT_HANDLER( onHandleLine )
 	{
 		std::string Line( eventData["input"].AsStr() );
+
+		std::cout << this << " -- MySocket::HandleLine(): " << Line << std::endl;
 
 		// Parse slash commands
 		if ( *Line.begin() == '/' )
@@ -154,17 +168,10 @@ public:
 		}
 		else
 		{
-			// Send to all connected clients
-			for ( auto s = _Server->begin(), s_end = _Server->end(); s != s_end; ++s )
-			{
-				// Skip ourselves
-				if ( s->get() == this )
-					continue;
-
-				// Currently using this pointer addresses as chat IDs
-				*s->get() << this << " ) " << Line << endl;
-			}
-
+			// Send to all connected clients (currently using this pointer addresses as chat IDs)
+			std::stringstream Msg;
+			Msg << this << " ) " << Line << endl;
+			this->Broadcast( Msg.str() );
 			*this << "*" << this << " ) " << Line << endl;
 		}
 	}
@@ -188,6 +195,38 @@ public:
 	{
 		*this << Toolbox::Network::VT100::Cmd( Toolbox::Network::VT100::Cmd_EraseDisplay );
 		*this << Toolbox::Network::VT100::Cmd( Toolbox::Network::VT100::Cmd_SetCursorPos, 0, 0 );
+	}
+
+	CMD_FUNC( Echo )
+	{
+		auto Arg1 = eventData.Find( "arg1" );
+
+		if ( Arg1 == eventData.end() )
+		{
+			*this << "Server) Echo is currently ";
+
+			if ( IsOptEnabled( Toolbox::Network::Telnet::Opt_Echo) )
+				*this << "on." << endl;
+			else
+				*this << "off." << endl;
+
+			return;
+		}
+
+		std::string Arg = Arg1->second.AsStr();
+
+		if ( !Arg.compare("off") )
+		{
+			*this << "Server) Disabling echo." << endl;
+			DisableOpt( Toolbox::Network::Telnet::Opt_Echo );
+		}
+		else if ( !Arg.compare("on") )
+		{
+			*this << "Server) Enabling echo." << endl;
+			RequestOpt( Toolbox::Network::Telnet::Opt_Echo );
+		}
+		else
+			*this << "Server) Usage:  /echo ([on|off])" << endl;
 	}
 
 	CMD_FUNC( Help )
@@ -214,32 +253,40 @@ public:
 	{
 		*this << "Current client options:" << endl;
 		*this << "  - Window Size" << endl;
-		*this << "    - Width:  " << _WindowSize.Width << endl;
-		*this << "    - Height: " << _WindowSize.Height << endl;
+		*this << "    - Width:  " << Width() << endl;
+		*this << "    - Height: " << Height() << endl;
+		*this << "  - Terminal Type" << endl;
+		*this << "    - Type:   " << TermType() << endl;
 	}
 
 	CMD_FUNC( Shutdown )
 	{
-		// NOTE: Using streams here (during server shutdown) won't work because they add to the output buffer...but the output buffer is flushed with the help of the server.
-		//       The current implementation includes an automatic prompt with streams too...something we don't necessarily want to display during a shutdown message.  Write() gets around this issue too.
-		std::stringstream Msg("");
-		Msg << endl << "The server is shutting down...goodbye!" << endl;
-
-		for ( auto s = _Server->begin(), s_end = _Server->end(); s != s_end; ++s )
+		if ( _Server )
 		{
-			// Give an extra newline to the ones who didn't dispatch the command
-			if ( s->get() != this )
-				(*s)->Write( endl );
-
-			(*s)->Write( Msg.str() );
+			// NOTE: Using streams here (during server shutdown) won't work because they add to the output buffer...but the output buffer is flushed with the help of the server.
+			//       The current implementation includes an automatic prompt with streams too...something we don't necessarily want to display during a shutdown message.  Write() gets around this issue too.
+			std::stringstream Msg("");
+			Msg << endl << "The server is shutting down...goodbye!" << endl;
+			this->Broadcast( Msg.str() );
+			_Server->Stop();
 		}
-
-		_Server->Stop();
+		else
+			throw std::runtime_error( "MySocket::Shutdown(): Attempted server shutdown with invalid _Server pointer." );
 	}
 
 	CMD_FUNC( Termtype )
 	{
-		// TODO: Set the term type
+		auto Term = eventData.Find( "arg1" );
+
+		if ( Term == eventData.end() )
+		{
+			RequestOpt( Toolbox::Network::Telnet::Opt_TermType );
+			*this << "Server) Attempting to query your client for its terminal type...";
+			return;
+		}
+
+		this->SetTermType( Term->second.AsStr() );
+		*this << "Server) Terminal type set to: " << TermType();
 	}
 
 	CMD_FUNC( Windowsize )
@@ -254,10 +301,9 @@ public:
 			return;
 		}
 
-		_WindowSize.Width = Width->second.AsUShort();
-		_WindowSize.Height = Height->second.AsUShort();
+		SetWindowSize( Width->second.AsUShort(), Height->second.AsUShort() );
 
-		*this << "Server) Window size set to: " << _WindowSize.Width << "," << _WindowSize.Height;
+		*this << "Server) Window size set to: " << this->Width() << "," << this->Height();
 	}
 
 	CMD_FUNC( Who )
@@ -265,13 +311,13 @@ public:
 		std::stringstream ID("");
 		std::list< std::string > Clients;
 
-		// Inform all connected clients
+		// Find all connected clients
 		for ( auto s = _Server->begin(), s_end = _Server->end(); s != s_end; ++s )
 		{
 			ID.str("");
 			ID << s->get();
 
-			// Skip ourselves
+			// Denote ourselves
 			if ( s->get() == this )
 				ID << " (You)";
 
@@ -350,15 +396,20 @@ namespace Toolbox
 		//
 		// Locally emits (but doesn't handle) the following events:
 		//
+		// - onTermType				- Called when the term type is negotiated
+		// 							  ["prev_termtype"] - (string)
+		//
 		// - onWindowSize			- Called when the window size is renegotiated
-		// 							  ["prev_width"] - (short int)
+		// 							  ["prev_width"]  - (short int)
 		// 							  ["prev_height"] - (short int)
 		//
 		// - onEnableTelnetOption	- Called when a telnet option is successfully enabled
-		// 							  ["option"] - (enum) Toolbox::Network::Telnet::Option
+		// 							  ["option"]  - (enum) Toolbox::Network::Telnet::Option
+		// 							  ["enabled"] - (bool) Current option status
 		//
 		// - onDisableTelnetOption	- Called when a telnet option is successfully disabled
-		// 							  ["option"] - (enum) Toolbox::Network::Telnet::Option
+		// 							  ["option"]  - (enum) Toolbox::Network::Telnet::Option
+		// 							  ["enabled"] - (bool) Current option status
 		//
 		class TelnetSocket : public Socket
 		{
@@ -389,6 +440,7 @@ namespace Toolbox
 		public:
 			TelnetSocket():
 				_Readmode( Readmode_DEFAULT ),
+				_TermType( "UNSET" ),
 				_Prompt( "> " ),
 				_CompactMode( false )
 			{
@@ -398,6 +450,7 @@ namespace Toolbox
 
 			TelnetSocket( const std::string &host, const std::string &port ):
 				_Readmode( Readmode_DEFAULT ),
+				_TermType( "UNSET" ),
 				_Prompt( "> " ),
 				_CompactMode( false ),
 				Socket( host, port )
@@ -408,6 +461,7 @@ namespace Toolbox
 
 			TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_START_INIT( TelnetSocket )
 				_Readmode( Readmode_DEFAULT ),
+				_TermType( "UNSET" ),
 				_Prompt( "> " ),
 				_CompactMode( false ),
 			TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_END_INIT
@@ -415,7 +469,8 @@ namespace Toolbox
 				// Set default telnet options
 				setDefaultOptions();
 
-				// Ask the client for its current window size
+				// Ask the client for a few options
+				RequestOpt( Telnet::Opt_TermType );
 				RequestOpt( Telnet::Opt_WindowSize );
 			}
 
@@ -443,6 +498,22 @@ namespace Toolbox
 				return _WindowSize.Height;
 			}
 
+			void SetWindowSize( unsigned short width, unsigned short height )
+			{
+				_WindowSize.Width = width;
+				_WindowSize.Height = height;
+			}
+
+			const std::string &TermType() const
+			{
+				return _TermType;
+			}
+
+			virtual void SetTermType( const std::string &termType )
+			{
+				_TermType = termType;
+			}
+
 			const std::string &Prompt() const
 			{
 				return _Prompt;
@@ -455,11 +526,14 @@ namespace Toolbox
 
 			// Makes a request to the client to enable an option
 			void RequestOpt( Telnet::Option opt );
+			void DisableOpt( Telnet::Option opt );
 
 			bool IsOptEnabled( Telnet::Option opt )
 			{
 				return _Options[ opt ];
 			}
+
+			bool IsOptAvailable( Telnet::Option opt );
 
 			virtual void Flush()
 			{
@@ -470,7 +544,8 @@ namespace Toolbox
 						return;
 
 					// Start us off on a fresh line each time
-					this->Write( endl );
+					if ( IsOptEnabled(Telnet::Opt_Echo) )
+						this->Write( endl );
 
 					// Compact mode and prompt
 					if ( !this->CompactMode() )
@@ -490,6 +565,7 @@ namespace Toolbox
 			std::string		_CurOptData;			// Telnet-handler current telnet option data
 			tTelnetOptions	_OutstandingQueries;	// Allows us to keep track of queries we've sent the client so we to properly handle the response (instead of treating it as a client request)
 
+			std::string		_TermType;
 			std::string		_Prompt;
 
 			bool			_CompactMode;
@@ -506,10 +582,25 @@ namespace Toolbox
 				unsigned short int 	Height;
 			}						_WindowSize;
 
+
 		protected:
 			// Overriding this lets us interject telnet handling before onHandleChar and onHandleLine are triggered so they can still be used as-expected
 			// Implemented below the TelnetServer definition
 			virtual void readChar( unsigned char input );
+
+			// Returns a proper line terminator for our transmission
+			virtual std::string lineEnd()
+			{
+				std::string End = Socket::lineEnd();
+
+				if ( !IsOptEnabled(Telnet::Opt_SuppressGoAhead) )
+				{
+					End.push_back( Telnet::Cmd_IAC );
+					End.push_back( Telnet::Cmd_GA );
+				}
+
+				return End;
+			}
 
 			// Returns 'true' if setting the option was successful
 			bool setOptEnabled( Telnet::Option opt, bool enabled = true );
@@ -520,7 +611,7 @@ namespace Toolbox
 				_Options[ Telnet::Opt_SuppressGoAhead ]	= false;
 				_Options[ Telnet::Opt_Status ]			= false;
 				_Options[ Telnet::Opt_TimingMark ]		= false;
-				_Options[ Telnet::Opt_TermType ]		= false;
+				_Options[ Telnet::Opt_TermType ]		= true;
 				_Options[ Telnet::Opt_WindowSize ]		= true;
 				_Options[ Telnet::Opt_TermSpeed ]		= false;
 				_Options[ Telnet::Opt_RemoteFlowCtrl ]	= false;
@@ -597,7 +688,16 @@ namespace Toolbox
 				{
 					case Telnet::Opt_TermType:
 					{
-						// TODO: Implement me
+						// Only the server needs to keep track of this...the client gets to control it more directly
+						if ( IsServer() )
+						{
+							this->SetTermType( _CurOptData );
+
+							Event::Data EventData;
+							EventData["prev_termtype"] = TermType();
+							HandleEvent( "onTermType", EventData );
+						}
+
 						break;
 					}
 
@@ -627,12 +727,6 @@ namespace Toolbox
 						break;
 					}
 
-					case Telnet::Opt_LineMode:
-					{
-						// TODO: Implement me
-						break;
-					}
-
 					default:
 						// Invalid telnet option
 						break;
@@ -642,22 +736,34 @@ namespace Toolbox
 			// Sends telnet option information...but only if the option requires it
 			void sendTelnetOption( Telnet::Option opt )
 			{
-				std::stringstream Response;
-				Response << (char)Telnet::Cmd_IAC;
-				Response << (char)Telnet::Cmd_SB;
-				Response << (char)opt;
+				std::string	ResponseData("");
+
+				// Header
+				ResponseData.push_back( Telnet::Cmd_IAC );
+				ResponseData.push_back( Telnet::Cmd_SB );
+				ResponseData.push_back( opt );
 
 				switch ( opt )
 				{
 					case Telnet::Opt_TermType:
 					{
-						// TODO: Implement me
-						Response << "vt100";
+						if ( !IsServer() )
+						{
+							ResponseData.push_back( (char)0 );
+							ResponseData.append( _TermType );
+						}
+						else
+							ResponseData.push_back( (char)1 );
+
 						break;
 					}
 
 					case Telnet::Opt_WindowSize:
 					{
+						// This should only be sent by a client
+						if ( IsServer() )
+							return;
+
 						// Properly package the data for sending
 						unsigned char Width_H  = 0;
 						unsigned char Width_L  = 0;
@@ -680,8 +786,10 @@ namespace Toolbox
 						else
 							Height_L = _WindowSize.Height;
 
-						Response << Width_H << Width_L;
-						Response << Height_H << Height_L;
+						ResponseData.push_back( Width_H );
+						ResponseData.push_back( Width_L );
+						ResponseData.push_back( Height_H );
+						ResponseData.push_back( Height_L );
 						break;
 					}
 
@@ -690,9 +798,11 @@ namespace Toolbox
 						return;
 				}
 
-				Response << (char)Telnet::Cmd_SE;
+				// Footer
+				ResponseData.push_back( Telnet::Cmd_IAC );
+				ResponseData.push_back( Telnet::Cmd_SE );
 
-				this->Write( Response.str() );
+				this->Write( ResponseData );
 			}
 		};
 
@@ -704,6 +814,30 @@ namespace Toolbox
 			typedef std::shared_ptr< Timer >	Timer_Ptr;
 
 			constexpr static unsigned int DEFAULT_OUTPUT_PULSE_DELAY = 100;
+
+		public:
+			// This is the "master list" for what is actually supported and not
+			static bool IsOptAvailable( Telnet::Option opt )
+			{
+				switch ( opt )
+				{
+					case Telnet::Opt_Echo:				return true;
+					case Telnet::Opt_SuppressGoAhead:	return true;
+					case Telnet::Opt_Status:			return false;
+					case Telnet::Opt_TimingMark:		return false;
+					case Telnet::Opt_TermType:			return true;
+					case Telnet::Opt_WindowSize:		return true;
+					case Telnet::Opt_TermSpeed:			return false;
+					case Telnet::Opt_RemoteFlowCtrl:	return false;
+					case Telnet::Opt_LineMode:			return true;
+					case Telnet::Opt_EnvVars:			return false;
+
+					default:
+						break;
+				}
+
+				return false;
+			}
 
 		public:
 			TelnetServer( short int port = DEFAULT_PORT ):
@@ -747,7 +881,7 @@ namespace Toolbox
 			}
 
 		protected:
-			tTelnetOptions			_Options;			// Available telnet options
+			tTelnetOptions			_Options;			// Available telnet options -- TelnetSockets client this upon creation
 
 			unsigned int			_OutputPulseDelay;	// In milliseconds
 			Timer_Ptr				_OutputTimer;		// Client output buffers are automatically flushed at regular intervals
@@ -765,13 +899,13 @@ namespace Toolbox
 				SetOutputPulseDelay( _OutputPulseDelay );
 			}
 
-			void setCapabilities()
+			virtual void setCapabilities()
 			{
 				_Options[ Telnet::Opt_Echo ]			= true;
 				_Options[ Telnet::Opt_SuppressGoAhead ]	= true;
 				_Options[ Telnet::Opt_Status ]			= false;
 				_Options[ Telnet::Opt_TimingMark ]		= false;
-				_Options[ Telnet::Opt_TermType ]		= false;
+				_Options[ Telnet::Opt_TermType ]		= true;
 				_Options[ Telnet::Opt_WindowSize ]		= true;
 				_Options[ Telnet::Opt_TermSpeed ]		= false;
 				_Options[ Telnet::Opt_RemoteFlowCtrl ]	= false;
@@ -802,6 +936,8 @@ namespace Toolbox
 
 		void TelnetSocket::RequestOpt( Telnet::Option opt )
 		{
+			unsigned char RequestCmd = Telnet::Cmd_WILL;
+
 			if ( IsServer() )
 			{
 				// Server socket
@@ -814,29 +950,87 @@ namespace Toolbox
 				if ( !ThisServer->IsOptEnabled(opt) )
 					return;
 
-				const char Request[] = {	(char)Telnet::Cmd_IAC,
-											(char)Telnet::Cmd_DO,
-											(char)opt,
-											'\0' };
-
-				// Add to our count so we interpret responses properly
-				_OutstandingQueries.set( opt );
-				Write( Request );
+				RequestCmd = Telnet::Cmd_DO;
 			}
-			else
-			{
-				// Client socket
-				const char Request[] = {	(char)Telnet::Cmd_IAC,
-											(char)Telnet::Cmd_WILL,
-											(char)opt,
-											'\0' };
 
-				// Add to our count so we interpret responses properly
-				_OutstandingQueries.set( opt );
-				Write( Request );
+			const char Request[] = {	Telnet::Cmd_IAC,
+										RequestCmd,
+										opt,
+										'\0' };
+
+			// Add to our count so we interpret responses properly
+			_OutstandingQueries.set( opt );
+			Write( Request );
+
+			// Send any follow-up that's required
+			switch ( opt )
+			{
+				case Telnet::Opt_TermType:
+					sendTelnetOption( opt );
+					break;
+
+				default:
+					break;
 			}
 		}
 
+		void TelnetSocket::DisableOpt( Telnet::Option opt )
+		{
+			unsigned char RequestCmd = Telnet::Cmd_WONT;
+
+			if ( IsServer() )
+				RequestCmd = Telnet::Cmd_DONT;
+
+			const char Request[] = {	Telnet::Cmd_IAC,
+										RequestCmd,
+										opt,
+										'\0' };
+
+			// Add to our count so we interpret responses properly
+			_OutstandingQueries.set( opt );
+			Write( Request );
+		}
+
+		bool TelnetSocket::IsOptAvailable( Telnet::Option opt )
+		{
+			if ( IsServer() )
+			{
+				TelnetServer *ThisServer = dynamic_cast< TelnetServer * >( _Server );
+
+				if ( !ThisServer )
+					throw std::runtime_error( "TelnetSocket::IsOptAvailable(): _Server pointer is not a valid TelnetServer." );
+
+				return ThisServer->IsOptEnabled( opt );
+			}
+
+			return TelnetServer::IsOptAvailable( opt );
+		}
+
+		bool TelnetSocket::setOptEnabled( Telnet::Option opt, bool enabled )
+		{
+			if ( IsServer() )
+			{
+				// Server socket
+				TelnetServer *ThisServer = dynamic_cast< TelnetServer * >( _Server );
+
+				if ( !ThisServer )
+					throw std::runtime_error( "TelnetSocket::setOptEnabled(): _Server pointer is not a valid TelnetServer." );
+
+				// We can always disable something
+				if ( !enabled )
+				{
+					_Options.reset( opt );
+					return true;
+				}
+
+				// But we might not always be able to enable something
+				if ( !ThisServer->IsOptEnabled(opt) )
+					return false;
+			}
+
+			_Options[ opt ] = enabled;
+			return true;
+		}
 
 		//
 		// The primary telnet handler function
@@ -849,10 +1043,11 @@ namespace Toolbox
 
 			// Prepare for a response, if needed
 			// [0] - IAC (must start response)
-			// [1] - Telnet::Option
+			// [1] - Telnet::Command or Telnet::Option
 			// [2] - Optional Param 1
 			// [3] - Optional Param 2
-			char Response[4] = { (char)Telnet::Cmd_IAC, '\0', '\0', '\0' };
+			// [4] - Terminator
+			char Response[5] = { (char)Telnet::Cmd_IAC, '\0', '\0', '\0', '\0' };
 
 			switch ( _Readmode )
 			{
@@ -1091,57 +1286,132 @@ namespace Toolbox
 				case Readmode_Will:
 				case Readmode_Do:
 				{
+					bool NeedResponse = true;
+					bool NeedFollowUp = true;
+					Event::Data EventData;
+
+					// Start preparing our response
+					Response[2] = (char)CurOpt;
+
+					// These get replaced with the proper response for the command
+					char Affirmative	= '\0';
+					char Negative		= '\0';
+
+					if ( _Readmode == Readmode_Will )
+					{
+						Affirmative	= Telnet::Cmd_DO;
+						Negative	= Telnet::Cmd_DONT;
+					}
+					else
+					{
+						Affirmative	= Telnet::Cmd_WILL;
+						Negative	= Telnet::Cmd_WONT;
+					}
+
+					// Now that we've figured that out, we can make sure to update our next read mode
 					_Readmode = Readmode_Normal;
 
-					// Check our outstanding queries so we don't always respond with "WILL" when the client acknowledges
+					// If we requested this option originally, we don't need to respond to the client
 					if ( _OutstandingQueries[CurOpt] )
 					{
 						_OutstandingQueries.reset( CurOpt );
 						break;
 					}
 
-					// Don't bother informing that we'll do LineMode at all (linux telnet hates this, so I assume others will to)
-					if ( CurOpt == Telnet::Opt_LineMode )
+					// Find out if we're capable/willing/etc...
+					if ( IsOptEnabled(CurOpt) )
 					{
-						setOptEnabled( CurOpt );
-						break;
+						// If it's already enabled, RFC says don't confirm...just send the follow-up data
+						NeedResponse = false;
+						NeedFollowUp = true;
 					}
-
-					// Only report we will if we're able to set it...also, don't bother informating that we won't do LineMode at all (just like above)
-					if ( setOptEnabled(CurOpt) && CurOpt != Telnet::Opt_LineMode )
+					else if ( IsOptAvailable(CurOpt) )
 					{
-						Response[1] = (char)Telnet::Cmd_WILL;
+						Response[3] == Affirmative;
 
-						Event::Data EventData;
-						EventData["option"] = CurOpt;
-						HandleEvent( "onEnableTelnetOption", EventData );
+						if ( !IsOptEnabled(CurOpt) )
+						{
+							setOptEnabled( CurOpt );
+							NeedFollowUp = true;
 
-						// Inform the other side of any additional information
-						if ( !_Server )
-							sendTelnetOption( CurOpt );
+							EventData["option"] = CurOpt;
+							EventData["enabled"] = true;
+							HandleEvent( "onEnableTelnetOption", EventData );
+						}
 					}
 					else
-						Response[1] = (char)Telnet::Cmd_WONT;
+					{
+						Response[3] == Negative;
 
-					Response[2] = (char)CurOpt;
-					Write( Response );
+						if ( IsOptEnabled(CurOpt) )
+						{
+							setOptEnabled( CurOpt, false );
+
+							EventData["option"] = CurOpt;
+							EventData["enabled"] = false;
+							HandleEvent( "onDisableTelnetOption", EventData );
+						}
+					}
+
+					// ...and let the client know
+					if ( NeedResponse )
+						Write( Response );
+
+					// Send additional data, if necessary
+					if ( NeedFollowUp )
+					{
+						switch ( CurOpt )
+						{
+							case Telnet::Opt_TermType:
+							case Telnet::Opt_WindowSize:
+								sendTelnetOption( CurOpt );
+								break;
+
+							default:
+								break;
+						}
+					}
+
 					break;
 				}
 
 				case Readmode_Wont:
 				case Readmode_Dont:
 				{
+					bool NeedResponse = true;
+					Event::Data EventData;
+
+					// Start preparing our response
+					Response[2] = (char)CurOpt;
+
+					if ( _Readmode == Readmode_Wont )
+						Response[3] = Telnet::Cmd_DONT;
+					else
+						Response[3] = Telnet::Cmd_WONT;
+
+					// Now that we've made that decision, we can set our next read mode
 					_Readmode = Readmode_Normal;
 
-					setOptEnabled( CurOpt, false );
+					// If we requested this option originally, we don't need to respond to the client
+					if ( _OutstandingQueries[CurOpt] )
+					{
+						_OutstandingQueries.reset( CurOpt );
+						NeedResponse = false;
+					}
 
-					Event::Data EventData;
-					EventData["option"] = CurOpt;
-					HandleEvent( "onDisableTelnetOption", EventData );
+					if ( IsOptEnabled(CurOpt) )
+					{
+						setOptEnabled( CurOpt, false );
 
-					Response[1] = (char)Telnet::Cmd_WONT;
-					Response[2] = (char)CurOpt;
-					Write( Response );
+						EventData["option"] = CurOpt;
+						EventData["enabled"] = false;
+						HandleEvent( "onDisableTelnetOption", EventData );
+					}
+
+					// ...and let the client know
+					if ( NeedResponse )
+						Write( Response );
+
 					break;
 				}
 
@@ -1149,32 +1419,6 @@ namespace Toolbox
 					// Unhandled mode!
 					break;
 			}
-		}
-
-		bool TelnetSocket::setOptEnabled( Telnet::Option opt, bool enabled )
-		{
-			if ( IsServer() )
-			{
-				// Server socket
-				TelnetServer *ThisServer = dynamic_cast< TelnetServer * >( _Server );
-
-				if ( !ThisServer )
-					throw std::runtime_error( "TelnetSocket::setOptEnabled(): _Server pointer is not a valid TelnetServer." );
-
-				// We can always disable something
-				if ( !enabled )
-				{
-					_Options.reset( opt );
-					return true;
-				}
-
-				// But we might not always be able to enable something
-				if ( !ThisServer->IsOptEnabled(opt) )
-					return false;
-			}
-
-			_Options[ opt ] = enabled;
-			return true;
 		}
 	}
 }
