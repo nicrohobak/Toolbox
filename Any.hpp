@@ -453,7 +453,7 @@ namespace Toolbox
 	};
 
 
-	const char *Any::DataTypeNames[ Any::DataType::Any_MAX ] =
+	const char *Any::DataTypeNames[ Any::Any_MAX ] =
 	{
 		"NULL",
 		"Bool",
@@ -477,7 +477,7 @@ std::ostream &operator<<( std::ostream &out, const Toolbox::Any &value )
 {
 	switch ( value.Type() )
 	{
-		case Toolbox::Any::DataType::Any_Bool:
+		case Toolbox::Any::Any_Bool:
 		{
 			if ( value.AsBool() )
 				out << "true";
@@ -486,55 +486,55 @@ std::ostream &operator<<( std::ostream &out, const Toolbox::Any &value )
 			break;
 		}
 
-		case Toolbox::Any::DataType::Any_Char:
+		case Toolbox::Any::Any_Char:
 			out << value.AsChar();
 			break;
 
-		case Toolbox::Any::DataType::Any_UChar:
+		case Toolbox::Any::Any_UChar:
 			out << value.AsUChar();
 			break;
 
-		case Toolbox::Any::DataType::Any_Short:
+		case Toolbox::Any::Any_Short:
 			out << value.AsShort();
 			break;
 
-		case Toolbox::Any::DataType::Any_UShort:
+		case Toolbox::Any::Any_UShort:
 			out << value.AsUShort();
 			break;
 
-		case Toolbox::Any::DataType::Any_Int:
+		case Toolbox::Any::Any_Int:
 			out << value.AsInt();
 			break;
 
-		case Toolbox::Any::DataType::Any_UInt:
+		case Toolbox::Any::Any_UInt:
 			out << value.AsUInt();
 			break;
 
-		case Toolbox::Any::DataType::Any_Long:
+		case Toolbox::Any::Any_Long:
 			out << value.AsLong();
 			break;
 
-		case Toolbox::Any::DataType::Any_ULong:
+		case Toolbox::Any::Any_ULong:
 			out << value.AsULong();
 			break;
 
-		case Toolbox::Any::DataType::Any_Float:
+		case Toolbox::Any::Any_Float:
 			out << value.AsFloat();
 			break;
 
-		case Toolbox::Any::DataType::Any_Double:
+		case Toolbox::Any::Any_Double:
 			out << value.AsDouble();
 			break;
 
-		case Toolbox::Any::DataType::Any_Str:
+		case Toolbox::Any::Any_Str:
 			out << value.AsStr();
 			break;
 
-		case Toolbox::Any::DataType::Any_Ptr:
+		case Toolbox::Any::Any_Ptr:
 			out << value.AsPtr< void * >();
 			break;
 
-		case Toolbox::Any::DataType::Any_NULL:
+		case Toolbox::Any::Any_NULL:
 		default:
 			out << "NULL";
 			break;
