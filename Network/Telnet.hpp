@@ -217,12 +217,12 @@ public:
 
 		if ( !Arg.compare("off") )
 		{
-			*this << "Server) Disabling echo." << endl;
+			*this << "Server) Requesting to disabling echo." << endl;
 			DisableOpt( Toolbox::Network::Telnet::Opt_Echo );
 		}
 		else if ( !Arg.compare("on") )
 		{
-			*this << "Server) Enabling echo." << endl;
+			*this << "Server) Requesting to enable echo." << endl;
 			RequestOpt( Toolbox::Network::Telnet::Opt_Echo );
 		}
 		else
@@ -257,6 +257,7 @@ public:
 		*this << "    - Height: " << Height() << endl;
 		*this << "  - Terminal Type" << endl;
 		*this << "    - Type:   " << TermType() << endl;
+		*this << "    - Echo:   " << (IsOptEnabled(Toolbox::Network::Telnet::Opt_Echo) ? "Enabled" : "Disabled") << endl;
 		*this << "  - Compact:  " << (this->CompactMode() ? "Enabled" : "Disabled") << endl;
 	}
 
