@@ -693,8 +693,7 @@ namespace Toolbox
 
 				_BufferingOutput = true;
 
-				std::string Output( msg );
-				Output.append( this->lineEnd() );			// Properly terminate the transmission
+				std::string Output( this->terminateLine(msg) );		// Properly terminate the transmission
 
 				asio::async_write( *_Socket,
 									asio::buffer(Output.c_str(), Output.length()),
@@ -719,11 +718,17 @@ namespace Toolbox
 			}
 
 			// Returns a proper line terminator for our transmission
-			virtual std::string lineEnd()
+			// Requires the outgoing message for reference (and possible modification)
+			virtual std::string terminateLine( const std::string &msg )
 			{
-				std::string End;
-				End.push_back( EOT );
-				return End;
+				std::string NewLine( msg );
+
+				char LastChar = *NewLine.rbegin();
+
+				if ( LastChar != '\0' )
+					NewLine.push_back( '\0' );
+
+				return NewLine;
 			}
 
 			template <typename tType>

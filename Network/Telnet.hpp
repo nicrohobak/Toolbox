@@ -205,7 +205,7 @@ public:
 		{
 			*this << "Server) Echo is currently ";
 
-			if ( IsOptEnabled( Toolbox::Network::Telnet::Opt_Echo) )
+			if ( IsOptEnabled(Toolbox::Network::Telnet::Opt_Echo) )
 				*this << "on." << endl;
 			else
 				*this << "off." << endl;
@@ -257,6 +257,7 @@ public:
 		*this << "    - Height: " << Height() << endl;
 		*this << "  - Terminal Type" << endl;
 		*this << "    - Type:   " << TermType() << endl;
+		*this << "  - Compact:  " << (this->CompactMode() ? "Enabled" : "Disabled") << endl;
 	}
 
 	CMD_FUNC( Shutdown )
@@ -589,17 +590,17 @@ namespace Toolbox
 			virtual void readChar( unsigned char input );
 
 			// Returns a proper line terminator for our transmission
-			virtual std::string lineEnd()
+			virtual std::string lineEnd( std::string &msg )
 			{
-				std::string End = Socket::lineEnd();
+				std::string NewLine = Socket::terminateLine(msg);
 
 				if ( !IsOptEnabled(Telnet::Opt_SuppressGoAhead) )
 				{
-					End.push_back( Telnet::Cmd_IAC );
-					End.push_back( Telnet::Cmd_GA );
+					NewLine.push_back( Telnet::Cmd_IAC );
+					NewLine.push_back( Telnet::Cmd_GA );
 				}
 
-				return End;
+				return NewLine;
 			}
 
 			// Returns 'true' if setting the option was successful
@@ -607,7 +608,8 @@ namespace Toolbox
 
 			void setDefaultOptions()
 			{
-				_Options[ Telnet::Opt_Echo ]			= true;
+				// Assume clients start in line mode, so turn off Echo and SuppressGoAhead
+				_Options[ Telnet::Opt_Echo ]			= false;
 				_Options[ Telnet::Opt_SuppressGoAhead ]	= false;
 				_Options[ Telnet::Opt_Status ]			= false;
 				_Options[ Telnet::Opt_TimingMark ]		= false;
@@ -625,10 +627,11 @@ namespace Toolbox
 
 				switch ( ch )
 				{
-					case '\n':		// Newline
-					case '\r':		// Carriage Return
-					case '\003':	// End of Line
-					case '\004':	// End of Transmission
+					case '\0':	// NULL
+					case '\n':	// Newline
+					case '\r':	// Carriage Return
+					case EOTXT:	// End of Line
+					case EOT:	// End of Transmission
 					{
 						// Client sockets always receive in character mode
 						if ( !_Server )
@@ -1079,17 +1082,18 @@ namespace Toolbox
 					// Line mode (Clients always need to use character mode here)
 					if ( IsServer() && !_Options[Telnet::Opt_SuppressGoAhead] )
 					{
-						if ( input == '\n'			// Newline
-						  || input == '\r'			// Carriage Return
-						  || input == '\003'		// End of Line
-						  || input == '\004' )		// End of Transmission
+						if ( input == '\0'		// NULL
+						  || input == '\n'		// Newline
+						  || input == '\r'		// Carriage Return
+						  || input == EOTXT		// End of Line
+						  || input == EOT )		// End of Transmission
 						{
 							// Echo (only if we're a server socket)
 							if ( IsServer() && _Options[Telnet::Opt_Echo] )
 								Write( _LineBuf );
 							// But clients need an actual newline injected sometimes
 							else if ( !_Server && input == '\n' )
-								_LineBuf.append( "\n\r" );
+								_LineBuf.append( endl );
 
 							if ( !_LineBuf.empty() )
 							{
