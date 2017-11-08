@@ -206,9 +206,9 @@ public:
 			*this << "Server) Echo is currently ";
 
 			if ( IsOptEnabled(Toolbox::Network::Telnet::Opt_Echo) )
-				*this << "on." << endl;
+				*this << "on.  (Normal mode)" << endl;
 			else
-				*this << "off." << endl;
+				*this << "off.  (Password mode)" << endl;
 
 			return;
 		}
@@ -217,12 +217,12 @@ public:
 
 		if ( !Arg.compare("off") )
 		{
-			*this << "Server) Requesting to disabling echo." << endl;
+			*this << "Server) Echo disabled.  (Password mode)" << endl;
 			DisableOpt( Toolbox::Network::Telnet::Opt_Echo );
 		}
 		else if ( !Arg.compare("on") )
 		{
-			*this << "Server) Requesting to enable echo." << endl;
+			*this << "Server) Echo enabled.  (Normal mode)" << endl;
 			RequestOpt( Toolbox::Network::Telnet::Opt_Echo );
 		}
 		else
@@ -257,7 +257,8 @@ public:
 		*this << "    - Height: " << Height() << endl;
 		*this << "  - Terminal Type" << endl;
 		*this << "    - Type:   " << TermType() << endl;
-		*this << "    - Echo:   " << (IsOptEnabled(Toolbox::Network::Telnet::Opt_Echo) ? "Enabled" : "Disabled") << endl;
+		*this << "    - Mode    " << (IsOptEnabled(Toolbox::Network::Telnet::Opt_SuppressGoAhead) ? "Character" : "Line") << endl;
+		*this << "    - Echo:   " << (IsOptEnabled(Toolbox::Network::Telnet::Opt_Echo) ? "On" : "Off") << endl;
 		*this << "  - Compact:  " << (this->CompactMode() ? "Enabled" : "Disabled") << endl;
 	}
 
@@ -597,8 +598,11 @@ namespace Toolbox
 
 				if ( !IsOptEnabled(Telnet::Opt_SuppressGoAhead) )
 				{
-					NewLine.push_back( Telnet::Cmd_IAC );
-					NewLine.push_back( Telnet::Cmd_GA );
+					const char GoAhead[] = {	Telnet::Cmd_IAC,
+												Telnet::Cmd_GA,
+												'\0'				};
+
+					NewLine.append( GoAhead );
 				}
 
 				return NewLine;
@@ -609,8 +613,8 @@ namespace Toolbox
 
 			void setDefaultOptions()
 			{
-				// Assume clients start in line mode, so turn off Echo and SuppressGoAhead
-				_Options[ Telnet::Opt_Echo ]			= false;
+				// Assume clients start in line mode, so turn off SuppressGoAhead
+				_Options[ Telnet::Opt_Echo ]			= true;
 				_Options[ Telnet::Opt_SuppressGoAhead ]	= false;
 				_Options[ Telnet::Opt_Status ]			= false;
 				_Options[ Telnet::Opt_TimingMark ]		= false;
@@ -954,7 +958,35 @@ namespace Toolbox
 				if ( !ThisServer->IsOptEnabled(opt) )
 					return;
 
-				RequestCmd = Telnet::Cmd_DO;
+				// Adjust the echo command for the server so the library function calls are logic-consistent
+				switch ( opt )
+				{
+					case Telnet::Opt_Echo:
+						RequestCmd = Telnet::Cmd_WONT;
+						setOptEnabled( opt, true );
+
+						// In character mode, we should skip sending a response
+						if ( IsOptEnabled(Telnet::Opt_SuppressGoAhead) )
+							return;
+						break;
+
+					default:
+						RequestCmd = Telnet::Cmd_DO;
+						break;
+				}
+			}
+			else
+			{
+				// Adjust the echo command for clients too
+				switch ( opt )
+				{
+					case Telnet::Opt_Echo:
+						RequestCmd = Telnet::Cmd_DONT;
+						break;
+
+					default:
+						break;
+				}
 			}
 
 			const char Request[] = {	Telnet::Cmd_IAC,
@@ -983,7 +1015,37 @@ namespace Toolbox
 			unsigned char RequestCmd = Telnet::Cmd_WONT;
 
 			if ( IsServer() )
-				RequestCmd = Telnet::Cmd_DONT;
+			{
+				// Adjust the some commands for the server so the library function calls are logic-consistent
+				switch ( opt )
+				{
+					case Telnet::Opt_Echo:
+						RequestCmd = Telnet::Cmd_WILL;
+						setOptEnabled( opt, false );
+						break;
+
+					case Telnet::Opt_SuppressGoAhead:
+						_OutstandingQueries.set( Telnet::Opt_Echo );
+						break;
+
+					default:
+						RequestCmd = Telnet::Cmd_DONT;
+						break;
+				}
+			}
+			else
+			{
+				// Adjust the echo command for the clients too
+				switch ( opt )
+				{
+					case Telnet::Opt_Echo:
+						RequestCmd = Telnet::Cmd_DO;
+						break;
+
+					default:
+						break;
+				}
+			}
 
 			const char Request[] = {	Telnet::Cmd_IAC,
 										RequestCmd,
@@ -1089,11 +1151,8 @@ namespace Toolbox
 						  || input == EOTXT		// End of Line
 						  || input == EOT )		// End of Transmission
 						{
-							// Echo (only if we're a server socket)
-							if ( IsServer() && _Options[Telnet::Opt_Echo] )
-								Write( _LineBuf );
-							// But clients need an actual newline injected sometimes
-							else if ( !_Server && input == '\n' )
+							// Clients need an actual newline injected sometimes
+							if ( !_Server && input == '\n' )
 								_LineBuf.append( endl );
 
 							if ( !_LineBuf.empty() )
@@ -1356,6 +1415,7 @@ namespace Toolbox
 							EventData["enabled"] = false;
 							HandleEvent( "onDisableTelnetOption", EventData );
 						}
+
 					}
 
 					// ...and let the client know
@@ -1401,7 +1461,12 @@ namespace Toolbox
 					if ( _OutstandingQueries[CurOpt] )
 					{
 						_OutstandingQueries.reset( CurOpt );
-						NeedResponse = false;
+
+						// If we skipped an echo, but our echo is already off...make sure we skip another.
+						// This is how we detect the "extra" echo request expected from the client
+						if ( CurOpt == Telnet::Opt_Echo && !IsOptEnabled(Telnet::Opt_Echo) )
+							_OutstandingQueries.set( CurOpt );
+						break;
 					}
 
 					if ( IsOptEnabled(CurOpt) )
@@ -1416,6 +1481,25 @@ namespace Toolbox
 					// ...and let the client know
 					if ( NeedResponse )
 						Write( Response );
+
+					switch ( CurOpt )
+					{
+						case Telnet::Opt_SuppressGoAhead:
+							// If echo is off, lets make sure the client is aware
+							if ( _Server && !IsOptEnabled(Telnet::Opt_Echo) )
+							{
+								char EchoOff[4] = {	Telnet::Cmd_IAC,
+													Telnet::Cmd_WILL,
+													Telnet::Opt_Echo,
+													'\0'				};
+								Write( EchoOff );
+								_OutstandingQueries.set( Telnet::Opt_Echo );
+							}
+							break;
+
+						default:
+							break;
+					}
 
 					break;
 				}
