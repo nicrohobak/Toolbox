@@ -143,11 +143,12 @@ namespace Toolbox
 		class tMap : public std::enable_shared_from_this< tMap<_tTileData,_tCoordType> >
 		{
 		public:
-			typedef _tCoordType						tCoordType;
-			typedef _tTileData						tTileData;
-			typedef tCoordinate< tCoordType >		Coordinate;
-			typedef tTile< tTileData >				Tile;
-			typedef std::map< tCoordType, Tile >	Column;			// Each x,y map coordinate is a column of map positions
+			typedef std::shared_ptr< tMap<_tTileData, _tCoordType> >	Ptr;
+			typedef _tCoordType											tCoordType;
+			typedef _tTileData											tTileData;
+			typedef tCoordinate< tCoordType >							Coordinate;
+			typedef tTile< tTileData >									Tile;
+			typedef std::map< tCoordType, Tile >						Column;		// Each x,y map coordinate is a column of map positions
 
 		public:
 			///////////////////////////////////////
@@ -318,7 +319,7 @@ namespace Toolbox
 			}
 		};
 
-		typedef tMap<>				Map;
+		typedef tMap<>					Map;
 	}
 }
 
