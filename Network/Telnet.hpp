@@ -661,7 +661,9 @@ namespace Toolbox
 					// Backspace
 					case 127:
 					{
-						Write( "\b \b" );
+						// Echo (For servers..clients don't handle this here)
+						if ( IsServer() && IsOptEnabled(Telnet::Opt_Echo) )
+							Write( "\b \b" );
 
 						if ( _LineBuf.size() > 0 )
 							_LineBuf.pop_back();
