@@ -33,6 +33,8 @@ for PLUGIN_SRC in `for DIR in \`find . -type d | grep -v './example' | grep / | 
 		${CPP} ${C_FLAGS} -o ${PLUGIN_TYPE}/${PLUGIN} ${PLUGIN_SRC} ${LD_FLAGS} -lSDL2_image
 	elif [ "${PLUGIN_TYPE}" == "Network" ] && [ "`echo "${PLUGIN}" | grep "asio"`" != "" ]; then
 		${CPP} ${C_FLAGS} -o ${PLUGIN_TYPE}/${PLUGIN} ${PLUGIN_SRC} ${LD_FLAGS} -lpthread
+	elif [ "${PLUGIN_TYPE}" == "SQL" ] && [ "`echo "${PLUGIN}" | grep "libmysqlclient"`" != "" ]; then
+		${CPP} ${C_FLAGS} -o ${PLUGIN_TYPE}/${PLUGIN} ${PLUGIN_SRC} ${LD_FLAGS} -lmysqlclient
 	else
 		${CPP} ${C_FLAGS} -o ${PLUGIN_TYPE}/${PLUGIN} ${PLUGIN_SRC} ${LD_FLAGS}
 	fi
