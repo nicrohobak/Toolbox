@@ -141,6 +141,13 @@
 		}
 	}
 
+
+	// Conversion tests:
+	std::cout << "Bool:   " << SqlServer.ToBool("true") << " - " << SqlServer.ToBool("false") << std::endl;
+	std::cout << "Long:   " << SqlServer.ToLong("8675309") << " - " << SqlServer.ToLong("-1") << std::endl;
+	std::cout << "ULong:  " << SqlServer.ToULong("8675309") << " - " << SqlServer.ToULong("-1") << std::endl;
+	std::cout << "Double: " << std::setprecision(20) << SqlServer.ToDouble("867.5309") << " - " << SqlServer.ToDouble("1234.56789") << " - " << SqlServer.ToDouble("3.141592653589793239") << std::endl;
+
  ****************************************************************************/
 
 
@@ -288,7 +295,11 @@ namespace Toolbox
 		virtual void Connect( const std::string &hostname = "", const std::string &database = "", const std::string &username = "", const std::string &password = "" ) = 0;
 		virtual SQLResult Query( const std::string &query = "" ) = 0;
 
-		// Result?
+		// Result conversions
+		virtual bool ToBool( const std::string &dbstr ) const = 0;
+		virtual long ToLong( const std::string &dbstr ) const = 0;
+		virtual unsigned long ToULong( const std::string &dbstr ) const = 0;
+		virtual double ToDouble( const std::string &dbstr ) const = 0;
 		
 	protected:
 		//
@@ -378,6 +389,38 @@ namespace Toolbox
 				return Current->Query( query );
 
 			return SQLResult();
+		}
+
+		bool ToBool( const std::string &dbStr )
+		{
+			if ( Current )
+				return Current->ToBool( dbStr );
+
+			return false;
+		}
+
+		long ToLong( const std::string &dbStr )
+		{
+			if ( Current )
+				return Current->ToLong( dbStr );
+
+			return long(0);
+		}
+
+		unsigned long ToULong( const std::string &dbStr )
+		{
+			if ( Current )
+				return Current->ToULong( dbStr );
+
+			return (unsigned long)(0);
+		}
+
+		double ToDouble( const std::string &dbStr )
+		{
+			if ( Current )
+				return Current->ToDouble( dbStr );
+
+			return double(0.0);
 		}
 
 	protected:

@@ -6,6 +6,7 @@
  */
 
 #include <iostream>
+#include <cstdlib>		// For database type conversions
 
 #include <Toolbox/SQL.hpp>
 
@@ -89,6 +90,32 @@ namespace Toolbox
 			mysql_free_result( Result );
 
 			return Results;
+		}
+
+		virtual bool ToBool( const std::string &dbStr ) const
+		{
+			if ( !dbStr.compare("1")
+			  || !dbStr.compare("true")
+			  || !dbStr.compare("TRUE")
+			  || !dbStr.compare("True") )
+				return true;
+
+			return false;
+		}
+
+		virtual long ToLong( const std::string &dbStr ) const
+		{
+			return strtol( dbStr.c_str(), NULL, 0 );
+		}
+
+		virtual unsigned long ToULong( const std::string &dbStr ) const
+		{
+			return strtoul( dbStr.c_str(), NULL, 0 );
+		}
+
+		virtual double ToDouble( const std::string &dbStr ) const
+		{
+			return strtod( dbStr.c_str(), NULL );
 		}
 
 	protected:
