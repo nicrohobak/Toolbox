@@ -77,19 +77,20 @@
 
 #include <cctype>
 
+#include <Toolbox/Defines.h>
+
 
 namespace Toolbox
 {
 	class Arguments
 	{
 	public:
-		typedef std::shared_ptr< Arguments >	Ptr;
-		typedef std::list< std::string >		StringList;
-		typedef std::list< Arguments::Ptr >		ArgList;
-		typedef ArgList::iterator				iterator;
-		typedef ArgList::const_iterator			const_iterator;
-		typedef ArgList::reverse_iterator		reverse_iterator;
-		typedef ArgList::const_reverse_iterator	const_reverse_iterator;
+		TOOLBOX_POINTERS_AND_LISTS( Arguments )
+		typedef std::list< std::string >				StringList;
+		typedef Arguments::List::iterator				iterator;
+		typedef Arguments::List::const_iterator			const_iterator;
+		typedef Arguments::List::reverse_iterator		reverse_iterator;
+		typedef Arguments::List::const_reverse_iterator	const_reverse_iterator;
 
 	public:
 		static bool IsQuoteChar( const char c )
@@ -160,7 +161,7 @@ namespace Toolbox
 		Arguments operator[]( size_t index )
 		{
 			size_t CurIndex = 0;
-			for ( ArgList::iterator i = _Args.begin(), i_end = _Args.end(); i != i_end; ++i, ++CurIndex )
+			for ( iterator i = _Args.begin(), i_end = _Args.end(); i != i_end; ++i, ++CurIndex )
 			{
 				if ( CurIndex == index )
 					return **i;
@@ -172,7 +173,7 @@ namespace Toolbox
 		const Arguments operator[]( size_t index ) const
 		{
 			size_t CurIndex = 0;
-			for ( ArgList::const_iterator i = _Args.begin(), i_end = _Args.end(); i != i_end; ++i, ++CurIndex )
+			for ( const_iterator i = _Args.begin(), i_end = _Args.end(); i != i_end; ++i, ++CurIndex )
 			{
 				if ( CurIndex == index )
 					return **i;
@@ -184,7 +185,7 @@ namespace Toolbox
 		void erase( size_t index )
 		{
 			size_t CurIndex = 0;
-			for ( ArgList::iterator i = _Args.begin(), i_end = _Args.end(); i != i_end; ++i, ++CurIndex )
+			for ( iterator i = _Args.begin(), i_end = _Args.end(); i != i_end; ++i, ++CurIndex )
 			{
 				if ( CurIndex == index )
 				{
@@ -276,7 +277,7 @@ namespace Toolbox
 
 	protected:
 		std::string		_Orig;
-		ArgList			_Args;
+		Arguments::List	_Args;
 		char			_QuoteChar;
 
 	protected:
@@ -336,7 +337,7 @@ namespace Toolbox
 		}
 
 	protected:
-		// Parses the contents of _Orig and populate our ArgList
+		// Parses the contents of _Orig and populate our Arguments::List
 		static std::string::const_iterator parse( Arguments &This, const std::string &str, std::string::const_iterator pos )
 		{
 			std::string::const_iterator CurPos = pos;
