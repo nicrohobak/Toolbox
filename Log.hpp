@@ -19,6 +19,11 @@
  * Then use that lob object with the Toolbox_LOG() macro for logging
  *     Toolbox_LOG( MyLog, Toolbox::Log::Level::Trace, "This is a trace test." );
  *
+ * Change the log verbosity at runtime:
+ *     MyLog->LogLevel = Toolbox::Log::Level::Trace;	// Changes the default
+ *     													// verbosity for the
+ *														// log object.
+ *
  *****************************************************************************
  * Notes:
  * - By default, all Log objects will log to stdout/stderr unless explicitly
@@ -52,7 +57,7 @@
 namespace Toolbox
 {
     #define Toolbox_LOG( _log, _logLevel, _msg )												\
-		if ( (_logLevel) == Toolbox::Log::Level::Any || (_logLevel) <= (_log).LogLevel() )		\
+		if ( (_logLevel) == Toolbox::Log::Level::Any || (_logLevel) <= (_log).LogLevel )		\
 		{																						\
 			(_log).Write( (_logLevel), __FILE__, __LINE__ ) << _msg << std::endl;				\
 																								\
@@ -97,22 +102,25 @@ namespace Toolbox
 		const std::string DefaultTimestampFormat = "%Y-%m-%d %X";
 
 	public:
+		Level			LogLevel;				// The lowest log level this logger will output
+
+	public:
 		Log():
-			_logLevel( Level::DEFAULT ),
+			LogLevel( Level::DEFAULT ),
 			_timestampFormat( DefaultTimestampFormat ),
 			_std_output( true )
 		{
 		}
 
 		Log( Level level ):
-			_logLevel( level ),
+			LogLevel( level ),
 			_timestampFormat( DefaultTimestampFormat ),
 			_std_output( true )
 		{
 		}
 
 		Log( const std::string &fileName, Level level = Level::DEFAULT, bool overwrite = false, bool std_output = true ):
-			_logLevel( level ),
+			LogLevel( level ),
 			_timestampFormat( DefaultTimestampFormat ),
 			_std_output( std_output )
 		{
@@ -134,11 +142,6 @@ namespace Toolbox
 		void SetTimestampFormat( const std::string &format )
 		{
 			_timestampFormat = format;
-		}
-
-		Level LogLevel() const
-		{
-			return _logLevel;
 		}
 
 		bool StdOutput() const
@@ -183,7 +186,7 @@ namespace Toolbox
 
 			if ( IsOpen() )
 			{
-				if ( _logLevel >= Level::Debug || LevelDataTable[level].std_err )
+				if ( LogLevel >= Level::Debug || LevelDataTable[level].std_err )
 					_file << CurTimestamp << " [" << LevelDataTable[level].name << "] [" << fileName << ", line " << lineNum << "]: ";
 				else
 					_file << CurTimestamp << " [" << LevelDataTable[level].name << "]: ";
@@ -191,7 +194,7 @@ namespace Toolbox
 
 			if ( _std_output )
 			{
-				if ( _logLevel >= Level::Debug || LevelDataTable[level].std_err )
+				if ( LogLevel >= Level::Debug || LevelDataTable[level].std_err )
 					std::cerr << CurTimestamp << " [" << LevelDataTable[level].name << "] [" << fileName << ", line " << lineNum << "]: ";
 				else
 					std::cout << CurTimestamp << " [" << LevelDataTable[level].name << "]: ";
@@ -201,7 +204,6 @@ namespace Toolbox
 		}
 
 	protected:
-		Level			_logLevel;				// The lowest log level this logger will output
 		std::ofstream	_file;					// The file to log to (optional)
 		std::string		_timestampFormat;		// The strftime format string
 		bool			_std_output;			// Enables stdout/stderr output
