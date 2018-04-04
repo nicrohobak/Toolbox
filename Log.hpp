@@ -214,7 +214,7 @@ namespace Toolbox
 			static time_t now;
 			static struct tm tstruct;
 
-			memset( buf, 80, 0 );
+			memset( buf, 0, 80 );
 
 			now = time( 0 );
 			tstruct = *localtime( &now );
