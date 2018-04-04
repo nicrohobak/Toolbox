@@ -331,19 +331,19 @@ namespace Toolbox
 		// - IMPORTANT: Requires use of TOOLBOX_PARENT() (Defines.h) in the class!
 		//              typedef ParentClass tParent;
 		// - Allows for member initializations
-		#define TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_INIT( tCustomSocket )				\
-				tCustomSocket( TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_PARAMS ):				\
+		#define TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_INIT( tCustomSocket )		\
+				tCustomSocket( TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_PARAMS ):		\
 					tParent( TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_ARGS )
 
-		#define TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_START_INIT( tCustomSocket )			\
-				tCustomSocket( TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_PARAMS ):				\
+		#define TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_START_INIT( tCustomSocket )	\
+				tCustomSocket( TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_PARAMS ):		\
 					tParent( TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_ARGS ),
 
 		#define TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_END_INIT								
 
 		// Simple constructor definition for custom Toolbox::Network::Socket classes
-		#define TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR( tCustomSocket )						\
-				TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_INIT( tCustomSocket )				\
+		#define TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR( tCustomSocket )				\
+				TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_INIT( tCustomSocket )		\
 		
 
 		// Constructor definition for custom Toolbox::Network::Server classes
@@ -353,11 +353,19 @@ namespace Toolbox
 		// createSocket() definition for custom Toolbox::Network::Server classes
 		#define TOOLBOX_NETWORK_SERVER_SOCKET_CONSTRUCTOR_ARGS	*this, _NewSocket
 
-		#define TOOLBOX_NETWORK_SERVER_CREATE_SOCKET( tCustomSocket )											\
-				virtual Toolbox::Network::Socket::Ptr createSocket()											\
-				{																								\
-					return std::make_shared< tCustomSocket >( TOOLBOX_NETWORK_SERVER_SOCKET_CONSTRUCTOR_ARGS );	\
+		#define TOOLBOX_NETWORK_SERVER_CREATE_SOCKET_BEGIN( tCustomSocket )													\
+				virtual Toolbox::Network::Socket::Ptr createSocket()														\
+				{																											\
+					auto NewSocket = std::make_shared< tCustomSocket >( TOOLBOX_NETWORK_SERVER_SOCKET_CONSTRUCTOR_ARGS );	\
+
+		#define TOOLBOX_NETWORK_SERVER_CREATE_SOCKET_END																	\
+					return NewSocket;																						\
 				}
+
+
+		#define TOOLBOX_NETWORK_SERVER_CREATE_SOCKET( tCustomSocket )														\
+				TOOLBOX_NETWORK_SERVER_CREATE_SOCKET_BEGIN( tCustomSocket )													\
+				TOOLBOX_NETWORK_SERVER_CREATE_SOCKET_END
 
 
 		//
