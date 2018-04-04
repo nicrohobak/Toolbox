@@ -24,7 +24,7 @@
 typedef Toolbox::Network::TelnetSocket	MySocketParent;
 
 
-class MySocket : public Toolbox::Network::TelnetSocket
+class MySocket : public MySocketParent
 {
 public:
 	TOOLBOX_PARENT( MySocketParent )				// Requirement of TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR
@@ -452,11 +452,11 @@ namespace Toolbox
 			}
 
 			TelnetSocket( const std::string &host, const std::string &port ):
+				Socket( host, port ),
 				_Readmode( Readmode_DEFAULT ),
 				_TermType( "UNSET" ),
 				_Prompt( "> " ),
-				_CompactMode( false ),
-				Socket( host, port )
+				_CompactMode( false )
 			{
 				// Set default telnet options
 				setDefaultOptions();
@@ -466,7 +466,7 @@ namespace Toolbox
 				_Readmode( Readmode_DEFAULT ),
 				_TermType( "UNSET" ),
 				_Prompt( "> " ),
-				_CompactMode( false ),
+				_CompactMode( false )
 			TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_END_INIT
 			{
 				// Set default telnet options
@@ -598,9 +598,9 @@ namespace Toolbox
 
 				if ( !IsOptEnabled(Telnet::Opt_SuppressGoAhead) )
 				{
-					const char GoAhead[] = {	Telnet::Cmd_IAC,
-												Telnet::Cmd_GA,
-												'\0'				};
+					const char GoAhead[] = {	(char)Telnet::Cmd_IAC,
+												(char)Telnet::Cmd_GA,
+												'\0'					};
 
 					NewLine.append( GoAhead );
 				}
@@ -851,15 +851,15 @@ namespace Toolbox
 
 		public:
 			TelnetServer( short int port = DEFAULT_PORT ):
-				_OutputPulseDelay( DEFAULT_OUTPUT_PULSE_DELAY ),
-				Server( port )
+				Server( port ),
+				_OutputPulseDelay( DEFAULT_OUTPUT_PULSE_DELAY )
 			{
 				setCapabilities();
 			}
 
 			TelnetServer( asio::io_service &io, short int port = DEFAULT_PORT ):
-				_OutputPulseDelay( DEFAULT_OUTPUT_PULSE_DELAY ),
-				Server( io, port )
+				Server( io, port ),
+				_OutputPulseDelay( DEFAULT_OUTPUT_PULSE_DELAY )
 			{
 				setCapabilities();
 			}
@@ -991,10 +991,10 @@ namespace Toolbox
 				}
 			}
 
-			const char Request[] = {	Telnet::Cmd_IAC,
-										RequestCmd,
-										opt,
-										'\0' };
+			const char Request[] = {	(char)Telnet::Cmd_IAC,
+										(char)RequestCmd,
+										(char)opt,
+										'\0'					};
 
 			// Add to our count so we interpret responses properly
 			_OutstandingQueries.set( opt );
@@ -1049,10 +1049,10 @@ namespace Toolbox
 				}
 			}
 
-			const char Request[] = {	Telnet::Cmd_IAC,
-										RequestCmd,
-										opt,
-										'\0' };
+			const char Request[] = {	(char)Telnet::Cmd_IAC,
+										(char)RequestCmd,
+										(char)opt,
+										'\0'					};
 
 			// Add to our count so we interpret responses properly
 			_OutstandingQueries.set( opt );
@@ -1393,7 +1393,7 @@ namespace Toolbox
 					}
 					else if ( IsOptAvailable(CurOpt) )
 					{
-						Response[3] == Affirmative;
+						Response[3] = Affirmative;
 
 						if ( !IsOptEnabled(CurOpt) )
 						{
@@ -1407,7 +1407,7 @@ namespace Toolbox
 					}
 					else
 					{
-						Response[3] == Negative;
+						Response[3] = Negative;
 
 						if ( IsOptEnabled(CurOpt) )
 						{
@@ -1490,10 +1490,10 @@ namespace Toolbox
 							// If echo is off, lets make sure the client is aware
 							if ( _Server && !IsOptEnabled(Telnet::Opt_Echo) )
 							{
-								char EchoOff[4] = {	Telnet::Cmd_IAC,
-													Telnet::Cmd_WILL,
-													Telnet::Opt_Echo,
-													'\0'				};
+								char EchoOff[4] = {	(char)Telnet::Cmd_IAC,
+													(char)Telnet::Cmd_WILL,
+													(char)Telnet::Opt_Echo,
+													'\0'					};
 								Write( EchoOff );
 								_OutstandingQueries.set( Telnet::Opt_Echo );
 							}

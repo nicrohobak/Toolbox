@@ -331,16 +331,19 @@ namespace Toolbox
 		// - IMPORTANT: Requires use of TOOLBOX_PARENT() (Defines.h) in the class!
 		//              typedef ParentClass tParent;
 		// - Allows for member initializations
-		#define TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_START_INIT( tCustomSocket )			\
-				tCustomSocket( TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_PARAMS ):
-
-		#define TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_END_INIT								\
+		#define TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_INIT( tCustomSocket )				\
+				tCustomSocket( TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_PARAMS ):				\
 					tParent( TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_ARGS )
+
+		#define TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_START_INIT( tCustomSocket )			\
+				tCustomSocket( TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_PARAMS ):				\
+					tParent( TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_ARGS ),
+
+		#define TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_END_INIT								
 
 		// Simple constructor definition for custom Toolbox::Network::Socket classes
 		#define TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR( tCustomSocket )						\
-				TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_START_INIT( tCustomSocket )			\
-				TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_END_INIT
+				TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_INIT( tCustomSocket )				\
 		
 
 		// Constructor definition for custom Toolbox::Network::Server classes
@@ -382,7 +385,7 @@ namespace Toolbox
 		public:
 			TOOLBOX_POINTERS_AND_LISTS( Socket )
 			constexpr static size_t BUFFER_SIZE	= 1;
-			constexpr static char *endl			= "\n\r";	// Newline
+			constexpr static char endl[]		= "\n\r";	// Newline
 			constexpr static char EOTXT			= '\003';	// ASCII End of Text
 			constexpr static char EOT			= '\004';	// ASCII End of Transmission
 
@@ -455,10 +458,10 @@ namespace Toolbox
 			}
 
 			Socket( TOOLBOX_NETWORK_SOCKET_CONSTRUCTOR_PARAMS ):
+				_Socket( socket ),
 				_Active( true ),
 				_Connecting( false ),
 				_Closing( false ),
-				_Socket( socket ),
 				_BufferingOutput( false ),
 				_Server( &server )
 			{
@@ -674,7 +677,7 @@ namespace Toolbox
 		protected:
 			void resetCharBuf()
 			{
-				memset( _CharBuf, BUFFER_SIZE + 1, 0 );
+				memset( _CharBuf, 0, BUFFER_SIZE + 1 );
 			}
 
 			void doClose();										// The actual work function...no event emitted here
@@ -760,6 +763,8 @@ namespace Toolbox
 			friend class Server;
 		};
 
+		constexpr char Socket::endl[];							// Newline
+	
 
 		class Server : public std::enable_shared_from_this< Server >
 		{
@@ -826,6 +831,7 @@ namespace Toolbox
 			Server &operator=( Server &rhs )
 			{
 				_Port	= rhs._Port;
+				return *this;
 			}
 
 			// Move assignment
@@ -837,6 +843,8 @@ namespace Toolbox
 				_Acceptor			= rhs._Acceptor;
 				_NewSocket			= rhs._NewSocket;
 				_Sockets			= rhs._Sockets;
+
+				return *this;
 			}
 
 			iterator begin()
@@ -1037,7 +1045,6 @@ namespace Toolbox
 										}
 									} );
 		}
-
 	}
 }
 

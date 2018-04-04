@@ -183,7 +183,7 @@ namespace Toolbox
 			return (float)castDouble();;
 		}
 
-		const std::string &AsStr() const
+		const std::string AsStr() const
 		{
 			switch ( _type )
 			{
