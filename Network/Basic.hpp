@@ -529,6 +529,12 @@ namespace Toolbox
 				return _Server;
 			}
 
+			template <typename tServer>
+			tServer *GetServer()
+			{
+				return dynamic_cast< tServer * >( _Server );
+			}
+
 			// Only used when acting as a client and not when associated with a _Server
 			virtual void Connect( const std::string &host, const std::string &port )
 			{
