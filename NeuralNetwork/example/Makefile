@@ -15,7 +15,7 @@ OBJ_EXT=o
 OBJ=$(OBJ_DIR)/main.$(OBJ_EXT)
 
 CPP=g++
-C_FLAGS=-std=c++14 -Wall -pedantic -g
+C_FLAGS=-std=c++17 -Wall -pedantic -g
 LD_FLAGS=
 LIBS=
 

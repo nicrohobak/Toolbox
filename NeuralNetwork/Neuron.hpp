@@ -95,6 +95,7 @@ namespace Toolbox
 		// Forward declarations
 		template <typename tNucleus> class _Neuron;
 
+
 		// Defaults
 		namespace Default
 		{
@@ -247,9 +248,17 @@ namespace Toolbox
 
 			virtual std::string Label() const
 			{
-				std::stringstream label("");
+				std::stringstream label("(*)");
 				label << this;
 				return label.str();
+			}
+
+			// Should be called from children even if return value is ignored -- Tracking this is faster than tracking unique additions to processing lists
+			virtual bool Process( bool useThreshold = true )
+			{
+				bool NeedsProcessing = !_Processed;
+				_Processed = true;
+				return NeedsProcessing;
 			}
 
 			bool Processed() const
@@ -331,14 +340,6 @@ namespace Toolbox
 			{
 				_Processed = false;
 				_Activated = false;
-			}
-
-			// Should be called from children even if return value is ignored -- Tracking this is faster than tracking unique additions to processing lists
-			virtual bool Process( bool useThreshold = true )
-			{
-				bool NeedsProcessing = !_Processed;
-				_Processed = true;
-				return NeedsProcessing;
 			}
 
 		protected:
@@ -460,7 +461,7 @@ namespace Toolbox
 
 			TOOLBOX_POINTERS( ttNeuron )
 
-			typedef _Neuron< tNeurotransmitter >			Parent;
+			typedef _Neuron< tNeurotransmitter >			tParent;
 
 			// An interface/container for our activation functions, and related items
 			// All neurons of this type will always use the same type of nucleus (hence static)
@@ -472,7 +473,7 @@ namespace Toolbox
 			}
 
 			tNeuron( const tNeurotransmitter &threshold ):
-				Parent( threshold )
+				tParent( threshold )
 			{
 			}
 
@@ -484,7 +485,7 @@ namespace Toolbox
 			virtual bool Process( bool useThreshold = true )
 			{
 				// Check with our parent about processing (also sets internal state...should be called even if the return value is ignored)
-				if ( !Parent::Process(useThreshold) )
+				if ( !tParent::Process(useThreshold) )
 					return false;
 
 				this->_PrevValue = this->_CurValue;
@@ -521,14 +522,15 @@ namespace Toolbox
 
 
 		// Just like a standard neuron, but with an attached label for human-readability
-		template <typename _tNucleus = Nucleus>
-		class tLabeledNeuron : public tNeuron< _tNucleus >
+		template <typename _tNeuron = Neuron>
+		class tLabeledNeuron : public _tNeuron
 		{
 		public:
-			typedef _tNucleus								tNucleus;
+			typedef _tNeuron								ttNeuron;
+			typedef ttNeuron								tParent;
+			typedef typename ttNeuron::tNucleus				tNucleus;
 			typedef typename tNucleus::tNeurotransmitter	tNeurotransmitter;
-			typedef tLabeledNeuron< tNucleus >				ttLabeledNeuron;
-			typedef tNeuron< tNucleus >						Parent;
+			typedef tLabeledNeuron< ttNeuron >				ttLabeledNeuron;
 
 			TOOLBOX_POINTERS( tLabeledNeuron )
 
@@ -539,12 +541,12 @@ namespace Toolbox
 			}
 
 			tLabeledNeuron( const tNeurotransmitter &threshold ):
-				Parent( threshold )
+				tParent( threshold )
 			{
 			}
 
 			tLabeledNeuron( const std::string &label, const tNeurotransmitter &threshold = tNeurotransmitter() ):
-				Parent( threshold ),
+				tParent( threshold ),
 				_Label( label )
 			{
 			}

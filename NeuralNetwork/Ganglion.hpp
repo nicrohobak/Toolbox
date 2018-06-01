@@ -70,9 +70,9 @@ namespace Toolbox
 
 			typedef typename ttNeuron::tNeurotransmitter										tNeurotransmitter;
 			typedef typename ttNeuron::tNucleus													tNucleus;
-			typedef tLabeledNeuron< tNucleus >													ttLabeledNeuron;
+			typedef tLabeledNeuron< ttNeuron >													ttLabeledNeuron;
 
-			typedef unsigned int																tNeuronIndex;
+			typedef size_t																		tNeuronIndex;
 			typedef std::map< tNeuronIndex, std::map<tNeuronIndex, typename ttNeuron::Ptr> >	tHiddenLayers;
 			typedef std::map< std::string, typename ttLabeledNeuron::Ptr >						tIOLayer;
 			typedef std::list< typename _Neuron<tNeurotransmitter>::Ptr >						tNeuronList;
@@ -105,54 +105,14 @@ namespace Toolbox
 			{
 			}
 
-			void NewInput( const std::string &label )
-			{
-				Input[ label ] = std::make_shared< ttLabeledNeuron >( label, DefaultThreshold );
-			}
-
-			void SetInput( const std::string &label, tNeurotransmitter value = tNeurotransmitter() )
-			{
-				auto CurInput = Input.find( label );
-
-				if ( CurInput == Input.end() )
-					throw std::runtime_error( std::string("Toolbox::NeuralNetwork::Ganglion::SetInput(): Input '") + label + std::string("' not found.") );
-
-				Input[ label ]->SetValue( value );
-			}
-
-			void NewOutput( const std::string &label )
-			{
-				Output[ label ] = std::make_shared< ttLabeledNeuron >( label, DefaultThreshold );
-			}
-
-			tNeurotransmitter GetOutput( const std::string &label )
-			{
-				auto CurOutput = Output.find( label );
-
-				if ( CurOutput == Output.end() )
-					throw std::runtime_error( std::string("Toolbox::NeuralNetwork::Ganglion::GetOutput(): Output '") + label + std::string("' not found.") );
-
-				return CurOutput->second->Value();
-			}
-
-			typename ttNeuron::Ptr GetOutputNeuron( const std::string &label )
-			{
-				auto CurOutput = Output.find( label );
-
-				if ( CurOutput == Output.end() )
-					throw std::runtime_error( std::string("Toolbox::NeuralNetwork::Ganglion::GetOutputNeuron(): Output '") + label + std::string("' not found.") );
-
-				return CurOutput->second;
-			}
-
-			void NewHiddenLayer( unsigned int numNeurons )
+			virtual void NewHiddenLayer( size_t numNeurons )
 			{
 				tNeuronIndex CurLayer = Hidden.size();
 
 				if ( CurLayer != 0 )
 					++CurLayer;
 
-				for ( unsigned int i = 0; i < numNeurons; ++i )
+				for ( size_t i = 0; i < numNeurons; ++i )
 					Hidden[ CurLayer ][ i ] = std::make_shared< ttNeuron >( DefaultThreshold );
 			}
 
@@ -237,7 +197,7 @@ namespace Toolbox
 			}
 
 			// All input values should be set prior to processing the network -- will stop after maxProcessingCycles or when no more neurons need processing (typically when the network settles and "generates output")
-			void Process( size_t maxProcessingCycles = Default::MaxProcessingCycles )
+			virtual void Process( size_t maxProcessingCycles = Default::MaxProcessingCycles )
 			{
 				tNeuronList ProcessingList, NextList;
 
@@ -249,7 +209,7 @@ namespace Toolbox
 					ProcessingList.push_back( Input );
 				}
 
-				unsigned int CurCycle = 0;
+				size_t CurCycle = 0;
 
 				// While we still have anything in it, lets go through our processing list
 				while ( !ProcessingList.empty() )
@@ -280,6 +240,46 @@ namespace Toolbox
 					// Copy our processing list to prepare for the next round
 					ProcessingList = NextList;
 				}
+			}
+
+			void NewInput( const std::string &label )
+			{
+				Input[ label ] = std::make_shared< ttLabeledNeuron >( label, DefaultThreshold );
+			}
+
+			void SetInput( const std::string &label, tNeurotransmitter value = tNeurotransmitter() )
+			{
+				auto CurInput = Input.find( label );
+
+				if ( CurInput == Input.end() )
+					throw std::runtime_error( std::string("Toolbox::NeuralNetwork::Ganglion::SetInput(): Input '") + label + std::string("' not found.") );
+
+				Input[ label ]->SetValue( value );
+			}
+
+			void NewOutput( const std::string &label )
+			{
+				Output[ label ] = std::make_shared< ttLabeledNeuron >( label, DefaultThreshold );
+			}
+
+			tNeurotransmitter GetOutput( const std::string &label )
+			{
+				auto CurOutput = Output.find( label );
+
+				if ( CurOutput == Output.end() )
+					throw std::runtime_error( std::string("Toolbox::NeuralNetwork::Ganglion::GetOutput(): Output '") + label + std::string("' not found.") );
+
+				return CurOutput->second->Value();
+			}
+
+			typename ttNeuron::Ptr GetOutputNeuron( const std::string &label )
+			{
+				auto CurOutput = Output.find( label );
+
+				if ( CurOutput == Output.end() )
+					throw std::runtime_error( std::string("Toolbox::NeuralNetwork::Ganglion::GetOutputNeuron(): Output '") + label + std::string("' not found.") );
+
+				return CurOutput->second;
 			}
 
 		protected:
